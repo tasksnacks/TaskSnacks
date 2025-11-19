@@ -101,6 +101,8 @@ button#organizeBtn:disabled {
   border-radius: 6px;
   background: #e7f1ff;
 }
+
+/* Auth section */
 #authSection {
   margin-bottom: 16px;
 }
@@ -133,6 +135,78 @@ button#organizeBtn:disabled {
   color: #4b5563;
 }
 
+/* (Old dateSection no longer used, but safe to keep) */
 #dateSection {
   margin: 12px 0;
+}
+
+/* Calendar section */
+#calendarSection {
+  margin: 16px 0;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.calendar-header button {
+  border: none;
+  background: #e5e7eb;
+  border-radius: 999px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+#calendarMonthLabel {
+  font-weight: 600;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.cal-day-name {
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.cal-day {
+  min-height: 40px;
+  padding: 4px;
+  border-radius: 6px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+}
+
+.cal-day.has-tasks {
+  background: #e0f2fe;
+  border-color: #38bdf8;
+}
+
+.cal-day.selected {
+  background: #2563eb;
+  color: white;
+  border-color: #1d4ed8;
+}
+
+/* Sort section */
+#sortSection {
+  margin: 12px 0;
+  text-align: left;
+}
+
+#sortMode {
+  margin-left: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
 }
