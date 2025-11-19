@@ -287,23 +287,27 @@ async function checkSession() {
 }
 
 function updateAuthUI() {
+  const hasCalendar = !!calendarSection;
+  const hasSort = !!sortSection;
+  const hasManual = !!manualAddSection;
+
   if (currentUser) {
     authStatus.textContent = `Logged in as ${currentUser.email}`;
     logoutBtn.style.display = "inline-block";
     loginBtn.style.display = "none";
     signupBtn.style.display = "none";
-    calendarSection.style.display = "block";
-    sortSection.style.display = "block";
-    manualAddSection.style.display = "flex";
+    if (hasCalendar) calendarSection.style.display = "block";
+    if (hasSort) sortSection.style.display = "block";
+    if (hasManual) manualAddSection.style.display = "flex";
     organizeBtn.disabled = false;
   } else {
     authStatus.textContent = "Not logged in.";
     logoutBtn.style.display = "none";
     loginBtn.style.display = "inline-block";
     signupBtn.style.display = "inline-block";
-    calendarSection.style.display = "none";
-    sortSection.style.display = "none";
-    manualAddSection.style.display = "none";
+    if (hasCalendar) calendarSection.style.display = "none";
+    if (hasSort) sortSection.style.display = "none";
+    if (hasManual) manualAddSection.style.display = "none";
     organizeBtn.disabled = true;
     tasksContainer.innerHTML = "";
     funFactContainer.textContent = "";
