@@ -2,8 +2,8 @@
 const workerUrl = "https://tasksnacks.hikarufujiart.workers.dev/"; // your Worker URL
 
 // Replace these with your Supabase values
-const supabaseUrl = "https://YOUR-PROJECT.supabase.co";
-const supabaseKey = "YOUR_PUBLIC_ANON_KEY";
+const supabaseUrl = "https://fxexewdnbmiybbutcnyv.supabase.com";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4ZXhld2RuYm1peWJidXRjbnl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1NTA2MjQsImV4cCI6MjA3OTEyNjYyNH0.E_UQHGX4zeLUajwMIlTRchsCMnr99__cDESOHflp8cc";
 
 // Supabase client
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
