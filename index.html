@@ -1,23 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>TaskSnacks — Dump. Organize. Reward.</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div class="container">
-    <h1>TaskSnacks</h1>
-    <p class="subtitle">Dump your messy thoughts. Get clear tasks. Earn a fun fact reward.</p>
-    <textarea id="brainDump" placeholder="Type everything on your mind..."></textarea>
-    <button id="organizeBtn">Organize My Mess</button>
-    <div id="tasksContainer"></div>
-    <div id="funFactContainer" class="fun-fact"></div>
-    <div class="coffee">
-      <a href="https://ko-fi.com/tasksnacks" target="_blank">☕ Support TaskSnacks</a>
-    </div>
+<div class="container">
+  <h1>TaskSnacks</h1>
+  <p class="subtitle">Dump your messy thoughts. Get clear tasks. Earn a fun fact reward.</p>
+
+  <!-- Auth section -->
+  <div id="authSection">
+    <input id="emailInput" type="email" placeholder="Email" />
+    <input id="passwordInput" type="password" placeholder="Password" />
+    <button id="signupBtn">Sign up</button>
+    <button id="loginBtn">Log in</button>
+    <button id="logoutBtn" style="display:none;">Log out</button>
+    <p id="authStatus" class="auth-status"></p>
   </div>
-  <script src="script.js"></script>
-</body>
-</html>
+
+  <!-- Date selector -->
+  <div id="dateSection" style="display:none;">
+    <label for="taskDate">Day:</label>
+    <input id="taskDate" type="date" />
+  </div>
+
+  <!-- Brain dump -->
+  <textarea id="brainDump" placeholder="Type everything on your mind..."></textarea>
+  <button id="organizeBtn" disabled>Organize My Mess</button>
+
+  <div id="tasksContainer"></div>
+  <div id="funFactContainer" class="fun-fact"></div>
+
+  <div class="coffee">
+    <a href="https://www.buymeacoffee.com/YOURNAME" target="_blank">☕ Support TaskSnacks</a>
+  </div>
+</div>
+
+<!-- Supabase client -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="script.js"></script>
