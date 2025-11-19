@@ -210,3 +210,35 @@ button#organizeBtn:disabled {
   border-radius: 6px;
   border: 1px solid #ccc;
 }
+
+.task-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  font-size: 0.8rem;
+}
+
+.priority-select {
+  font-size: 0.75rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.task-delete,
+.task-move {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 2px 4px;
+}
+
+.task-delete {
+  color: #dc2626;
+}
+
+.task-move {
+  color: #6b7280;
+}
