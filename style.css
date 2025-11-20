@@ -63,6 +63,7 @@ button#organizeBtn:disabled {
   justify-content: space-between;
   background: white;
   border: 1px solid #ddd;
+  transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
 }
 
 .task-item.high {
@@ -311,4 +312,44 @@ button#organizeBtn:disabled {
 
 .task-move {
   color: #6b7280;
+}
+
+.undo-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%) translateY(20px);
+  background: #111827;
+  color: #f9fafb;
+  padding: 8px 14px;
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 50;
+}
+
+.undo-bar.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.undo-bar button {
+  border: 1px solid #e5e7eb;
+  background: transparent;
+  color: #f9fafb;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.undo-bar button:hover {
+  background: #1f2937;
 }
