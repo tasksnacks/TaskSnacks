@@ -514,12 +514,12 @@ function renderTaskItem(task) {
       .update({ completed: checkbox.checked })
       .eq("id", task.id);
 
-    if (checkbox.checked) {
-      const fact = getRandomFunFact();
-      if (fact) {
-        funFactContainer.textContent = `🎉 Fun fact: ${fact}`;
-      }
+     if (checkbox.checked) {
+    const fact = getRandomFunFact();
+    if (fact) {
+      showFunFact(fact);
     }
+  }
   });
 
   const label = document.createElement("label");
