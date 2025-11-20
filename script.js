@@ -9,15 +9,18 @@ const supabaseKey =
 // Supabase client
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-// Fun facts (local only, no API cost)
+// Fun facts (local only)
 const funFacts = [
   "Sea otters hold hands while sleeping so they don't drift apart.",
   "Cows have best friends and get stressed when separated.",
   "Your brain uses about 20% of your body's energy, even at rest.",
   "Ravens can remember human faces and hold grudges.",
   "Sloths can hold their breath longer than dolphins.",
-  "Sharks existed before trees appeared on Earth."
-  // ...you can add more here later, each as "text",
+  "Sharks existed before trees appeared on Earth.",
+  "Wombats produce cube-shaped poop to mark territory.",
+  "Koalas sleep up to 22 hours a day.",
+  "A group of flamingos is called a flamboyance.",
+  "Honey never spoils; archaeologists found edible honey in ancient tombs."
 ];
 
 let lastFunFact = null;
@@ -30,9 +33,43 @@ function getRandomFunFact() {
   lastFunFact = fact;
   return fact;
 }
-let lastDeletedTask = null;
+
+// === DOM refs ===
+const organizeBtn = document.getElementById("organizeBtn");
+const brainDump = document.getElementById("brainDump");
+const tasksContainer = document.getElementById("tasksContainer");
+const funFactContainer = document.getElementById("funFactContainer");
+const taskDateInput = document.getElementById("taskDate");
+
+const emailInput = document.getElementById("emailInput");
+const passwordInput = document.getElementById("passwordInput");
+const signupBtn = document.getElementById("signupBtn");
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const authStatus = document.getElementById("authStatus");
+
+const calendarSection = document.getElementById("calendarSection");
+const calendarGrid = document.getElementById("calendarGrid");
+const calendarMonthLabel = document.getElementById("calendarMonthLabel");
+const prevMonthBtn = document.getElementById("prevMonthBtn");
+const nextMonthBtn = document.getElementById("nextMonthBtn");
+
+const sortSection = document.getElementById("sortSection");
+const sortMode = document.getElementById("sortMode");
+
+const manualAddSection = document.getElementById("manualAddSection");
+const manualTaskInput = document.getElementById("manualTaskInput");
+const manualAddBtn = document.getElementById("manualAddBtn");
+
+// === STATE ===
+let currentUser = null;
+let currentMonthDate = new Date(); // which month is shown in the calendar
+let draggedTaskElement = null;     // for drag & drop
+
+let lastDeletedTask = null;        // for undo
 let undoTimeoutId = null;
 
+// === UNDO HELPERS ===
 function showUndo(task) {
   lastDeletedTask = task;
   const undoBar = document.getElementById("undoBar");
@@ -84,38 +121,8 @@ function hideUndoBar() {
   const undoBar = document.getElementById("undoBar");
   if (undoBar) undoBar.classList.remove("visible");
 }
-// DOM refs
-const organizeBtn = document.getElementById("organizeBtn");
-const brainDump = document.getElementById("brainDump");
-const tasksContainer = document.getElementById("tasksContainer");
-const funFactContainer = document.getElementById("funFactContainer");
-const taskDateInput = document.getElementById("taskDate");
-
-const emailInput = document.getElementById("emailInput");
-const passwordInput = document.getElementById("passwordInput");
-const signupBtn = document.getElementById("signupBtn");
-const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const authStatus = document.getElementById("authStatus");
-
-const calendarSection = document.getElementById("calendarSection");
-const calendarGrid = document.getElementById("calendarGrid");
-const calendarMonthLabel = document.getElementById("calendarMonthLabel");
-const prevMonthBtn = document.getElementById("prevMonthBtn");
-const nextMonthBtn = document.getElementById("nextMonthBtn");
-
-const sortSection = document.getElementById("sortSection");
-const sortMode = document.getElementById("sortMode");
-
-const manualAddSection = document.getElementById("manualAddSection");
-const manualTaskInput = document.getElementById("manualTaskInput");
-const manualAddBtn = document.getElementById("manualAddBtn");
 
 // === AUTH LOGIC ===
-let currentUser = null;
-let currentMonthDate = new Date(); // which month is shown in the calendar
-let draggedTaskElement = null;     // for drag & drop
-
 async function checkSession() {
   const { data } = await supabase.auth.getUser();
   currentUser = data.user || null;
@@ -155,89 +162,76 @@ function updateAuthUI() {
   }
 }
 
-// --- Auth buttons ---
-if (signupBtn) {
-  signupBtn.addEventListener("click", async () => {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-    if (!email || !password) return alert("Email and password required.");
+signupBtn.addEventListener("click", async () => {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
+  if (!email || !password) return alert("Email and password required.");
 
-    try {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) {
-        console.error("Sign up error object:", error);
-        return alert("Sign up error: " + error.message);
-      }
-      alert("Check your email to confirm your account.");
-    } catch (e) {
-      console.error("Sign up threw exception:", e);
-      alert("Sign up error: " + e.message);
+  try {
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) {
+      console.error("Sign up error object:", error);
+      return alert("Sign up error: " + error.message);
     }
-  });
-}
+    alert("Check your email to confirm your account.");
+  } catch (e) {
+    console.error("Sign up threw exception:", e);
+    alert("Sign up error: " + e.message);
+  }
+});
 
-if (loginBtn) {
-  loginBtn.addEventListener("click", async () => {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-    if (!email || !password) return alert("Email and password required.");
+loginBtn.addEventListener("click", async () => {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
+  if (!email || !password) return alert("Email and password required.");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) return alert("Login error: " + error.message);
-    currentUser = data.user;
-    updateAuthUI();
-    setToday();
-    await loadTasksForSelectedDate();
-    await renderCalendar();
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
   });
-}
+  if (error) return alert("Login error: " + error.message);
+  currentUser = data.user;
+  updateAuthUI();
+  setToday();
+  await loadTasksForSelectedDate();
+  await renderCalendar();
+});
 
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", async () => {
-    await supabase.auth.signOut();
-    currentUser = null;
-    updateAuthUI();
-  });
-}
+logoutBtn.addEventListener("click", async () => {
+  await supabase.auth.signOut();
+  currentUser = null;
+  updateAuthUI();
+});
 
 // === DATE & CALENDAR HANDLING ===
 function setToday() {
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10); // YYYY-MM-DD
-  if (taskDateInput) taskDateInput.value = todayStr;
+  taskDateInput.value = todayStr;
   currentMonthDate = today;
 }
 
-if (sortMode) {
-  sortMode.addEventListener("change", () => {
-    if (currentUser) loadTasksForSelectedDate();
-  });
-}
+sortMode.addEventListener("change", () => {
+  if (currentUser) loadTasksForSelectedDate();
+});
 
-if (prevMonthBtn) {
-  prevMonthBtn.addEventListener("click", () => {
-    currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
-    renderCalendar();
-  });
-}
+prevMonthBtn.addEventListener("click", () => {
+  currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
+  renderCalendar();
+});
 
-if (nextMonthBtn) {
-  nextMonthBtn.addEventListener("click", () => {
-    currentMonthDate.setMonth(currentMonthDate.getMonth() + 1);
-    renderCalendar();
-  });
-}
+nextMonthBtn.addEventListener("click", () => {
+  currentMonthDate.setMonth(currentMonthDate.getMonth() + 1);
+  renderCalendar();
+});
 
 async function renderCalendar() {
   if (!currentUser) return;
-  if (!calendarGrid || !calendarMonthLabel || !taskDateInput) return; // no calendar DOM yet
 
   const year = currentMonthDate.getFullYear();
   const month = currentMonthDate.getMonth(); // 0-11
 
+  // Label like "November 2025"
   calendarMonthLabel.textContent = currentMonthDate.toLocaleDateString(
     undefined,
     { month: "long", year: "numeric" }
@@ -251,6 +245,7 @@ async function renderCalendar() {
   const last = new Date(year, month + 1, 0);
   const monthEnd = last.toISOString().slice(0, 10);
 
+  // Which dates in this month have tasks?
   const { data, error } = await supabase
     .from("tasks")
     .select("task_date")
@@ -264,6 +259,7 @@ async function renderCalendar() {
 
   const datesWithTasks = new Set((data || []).map((row) => row.task_date));
 
+  // Build grid
   calendarGrid.innerHTML = "";
 
   const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -309,15 +305,14 @@ async function renderCalendar() {
   }
 }
 
-// === LOAD TASKS FOR A DATE (uses sort_index for stable order) ===
+// === LOAD TASKS FOR A DATE ===
 async function loadTasksForSelectedDate() {
-  if (!tasksContainer || !taskDateInput || !currentUser) return;
-
   tasksContainer.innerHTML = "";
   funFactContainer.textContent = "";
+  hideUndoBar();
 
   const date = taskDateInput.value;
-  if (!date) return;
+  if (!date || !currentUser) return;
 
   const { data, error } = await supabase
     .from("tasks")
@@ -340,28 +335,28 @@ async function loadTasksForSelectedDate() {
       (a, b) => (order[a.priority] ?? 3) - (order[b.priority] ?? 3)
     );
   }
+  // if sortMode is "created" ("My order"), we keep DB order
 
   tasks.forEach((task) => {
     renderTaskItem(task);
   });
 
+  // Refresh calendar highlights for has-tasks / selected
   renderCalendar();
 }
 
-// === DRAG & DROP HELPERS ===
-if (tasksContainer) {
-  tasksContainer.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    if (!draggedTaskElement) return;
+// === DRAG & DROP CONTAINER HANDLING ===
+tasksContainer.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  if (!draggedTaskElement) return;
 
-    const afterElement = getDragAfterElement(tasksContainer, e.clientY);
-    if (afterElement == null) {
-      tasksContainer.appendChild(draggedTaskElement);
-    } else {
-      tasksContainer.insertBefore(draggedTaskElement, afterElement);
-    }
-  });
-}
+  const afterElement = getDragAfterElement(tasksContainer, e.clientY);
+  if (afterElement == null) {
+    tasksContainer.appendChild(draggedTaskElement);
+  } else {
+    tasksContainer.insertBefore(draggedTaskElement, afterElement);
+  }
+});
 
 function getDragAfterElement(container, y) {
   const draggableElements = [
@@ -394,19 +389,32 @@ async function saveTaskOrderToDatabase() {
   try {
     await Promise.all(updates);
 
-    // After manual reorder, show “my order / creation order”
+    // After manual reorder, show “my order”
     if (sortMode) {
-      sortMode.value = "created";   // make sure your <option value="created"> exists
+      sortMode.value = "created";
     }
   } catch (e) {
     console.error("Error saving order:", e);
   }
 }
 
+// === DELETE WITH ANIMATION & UNDO ===
+async function handleDelete(task, div) {
+  // slide + fade
+  div.style.opacity = "0";
+  div.style.transform = "translateX(20px)";
+
+  setTimeout(async () => {
+    await supabase.from("tasks").delete().eq("id", task.id);
+    div.remove();
+    await saveTaskOrderToDatabase();
+    await renderCalendar();
+    showUndo(task);
+  }, 150);
+}
+
 // === RENDER TASK ITEM ===
 function renderTaskItem(task) {
-  if (!tasksContainer) return;
-
   const div = document.createElement("div");
   div.className = `task-item ${task.priority || "low"}`;
   div.dataset.taskId = task.id;
@@ -421,6 +429,46 @@ function renderTaskItem(task) {
     draggedTaskElement = null;
     div.classList.remove("dragging");
     saveTaskOrderToDatabase();
+  });
+
+  // --- Swipe-to-delete (mobile) ---
+  let touchStartX = null;
+  let touchCurrentX = null;
+  let isSwiping = false;
+
+  div.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1) return;
+    touchStartX = e.touches[0].clientX;
+    touchCurrentX = touchStartX;
+    isSwiping = true;
+  }, { passive: true });
+
+  div.addEventListener("touchmove", (e) => {
+    if (!isSwiping) return;
+    touchCurrentX = e.touches[0].clientX;
+    const deltaX = touchCurrentX - touchStartX;
+
+    // Only react to left swipe
+    if (deltaX < 0) {
+      div.style.transform = `translateX(${deltaX}px)`;
+      const opacity = Math.max(0.3, 1 + deltaX / 200);
+      div.style.opacity = String(opacity);
+    }
+  }, { passive: true });
+
+  div.addEventListener("touchend", () => {
+    if (!isSwiping) return;
+    isSwiping = false;
+
+    const deltaX = touchCurrentX - touchStartX;
+    if (deltaX < -80) {
+      // swiped left far enough → delete
+      handleDelete(task, div);
+    } else {
+      // snap back
+      div.style.transform = "translateX(0)";
+      div.style.opacity = "1";
+    }
   });
 
   const left = document.createElement("div");
@@ -476,12 +524,13 @@ function renderTaskItem(task) {
     div.classList.remove("high", "medium", "low");
     div.classList.add(newPriority);
 
+    // If sorting by priority, reload list from DB
     if (sortMode && sortMode.value === "priority") {
       loadTasksForSelectedDate();
     }
   });
 
-  // Optional move buttons
+  // Move buttons (for mouse users)
   const upBtn = document.createElement("button");
   upBtn.textContent = "↑";
   upBtn.title = "Move up";
@@ -511,12 +560,8 @@ function renderTaskItem(task) {
   deleteBtn.textContent = "✕";
   deleteBtn.title = "Delete task";
   deleteBtn.className = "task-delete";
-  deleteBtn.addEventListener("click", async () => {
-    if (!confirm("Delete this task?")) return;
-    await supabase.from("tasks").delete().eq("id", task.id);
-    div.remove();
-    saveTaskOrderToDatabase();
-    renderCalendar();
+  deleteBtn.addEventListener("click", () => {
+    handleDelete(task, div);
   });
 
   controls.appendChild(prioritySelect);
@@ -532,7 +577,6 @@ function renderTaskItem(task) {
 // === MANUAL ADD TASK ===
 async function addManualTask() {
   if (!currentUser) return alert("Please log in first.");
-  if (!manualTaskInput || !taskDateInput) return;
   const text = manualTaskInput.value.trim();
   if (!text) return;
 
@@ -569,90 +613,86 @@ async function addManualTask() {
   await renderCalendar();
 }
 
-if (manualAddBtn) {
-  manualAddBtn.addEventListener("click", addManualTask);
-}
-if (manualTaskInput) {
-  manualTaskInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addManualTask();
-    }
-  });
-}
+manualAddBtn.addEventListener("click", addManualTask);
+manualTaskInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addManualTask();
+  }
+});
 
 // === ORGANIZE BUTTON (AI + SAVE, APPEND TASKS) ===
-if (organizeBtn) {
-  organizeBtn.addEventListener("click", async () => {
-    if (!currentUser) return alert("Please log in first.");
-    const dumpText = brainDump.value.trim();
-    if (!dumpText) return alert("Please type something first.");
+organizeBtn.addEventListener("click", async () => {
+  if (!currentUser) return alert("Please log in first.");
+  const dumpText = brainDump.value.trim();
+  if (!dumpText) return alert("Please type something first.");
 
-    const date = taskDateInput.value;
-    if (!date) return alert("Please choose a date.");
+  const date = taskDateInput.value;
+  if (!date) return alert("Please choose a date.");
 
-    organizeBtn.disabled = true;
-    organizeBtn.textContent = "Organizing…";
-    funFactContainer.textContent = "";
+  organizeBtn.disabled = true;
+  organizeBtn.textContent = "Organizing…";
+  funFactContainer.textContent = "";
+  hideUndoBar();
 
-    try {
-      const response = await fetch(workerUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "tasks", text: dumpText }),
-      });
+  try {
+    const response = await fetch(workerUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "tasks", text: dumpText }),
+    });
 
-      const data = await response.json();
-      if (!data.ok) throw new Error(data.error || "Unknown error from worker.");
+    const data = await response.json();
+    if (!data.ok) throw new Error(data.error || "Unknown error from worker.");
 
-      const lines = data.tasksText
-        .split("\n")
-        .filter((line) => line.trim().startsWith("-"));
+    const lines = data.tasksText
+      .split("\n")
+      .filter((line) => line.trim().startsWith("-"));
 
-      const existingItems = [
-        ...tasksContainer.querySelectorAll(".task-item")
-      ];
-      let baseIndex = existingItems.length;
+    // determine base index so AI tasks are appended in given order
+    const existingItems = [
+      ...tasksContainer.querySelectorAll(".task-item")
+    ];
+    let baseIndex = existingItems.length;
 
-      for (const line of lines) {
-        const trimmed = line.replace(/^-\s*/, "");
-        const match = trimmed.match(/^\[(High|Medium|Low)\]\s*(.+)$/i);
-        if (match) {
-          const priority = match[1].toLowerCase();
-          const text = match[2];
+    for (const line of lines) {
+      const trimmed = line.replace(/^-\s*/, "");
+      const match = trimmed.match(/^\[(High|Medium|Low)\]\s*(.+)$/i);
+      if (match) {
+        const priority = match[1].toLowerCase();
+        const text = match[2];
 
-          const { data: inserted, error } = await supabase
-            .from("tasks")
-            .insert({
-              user_id: currentUser.id,
-              task_date: date,
-              task_text: text,
-              priority,
-              completed: false,
-              sort_index: baseIndex
-            })
-            .select()
-            .single();
+        const { data: inserted, error } = await supabase
+          .from("tasks")
+          .insert({
+            user_id: currentUser.id,
+            task_date: date,
+            task_text: text,
+            priority,
+            completed: false,
+            sort_index: baseIndex
+          })
+          .select()
+          .single();
 
-          if (!error && inserted) {
-            renderTaskItem(inserted);
-            baseIndex += 1;
-          }
+        if (!error && inserted) {
+          renderTaskItem(inserted);
+          baseIndex += 1;
         }
       }
-
-      await saveTaskOrderToDatabase();
-      await renderCalendar();
-    } catch (err) {
-      console.error(err);
-      alert("Error: " + err.message);
-    } finally {
-      organizeBtn.disabled = false;
-      organizeBtn.textContent = "Organize My Mess";
-      brainDump.value = "";
     }
-  });
-}
+
+    await saveTaskOrderToDatabase();
+    await renderCalendar();
+  } catch (err) {
+    console.error(err);
+    alert("Error: " + err.message);
+  } finally {
+    organizeBtn.disabled = false;
+    organizeBtn.textContent = "Organize My Mess";
+    brainDump.value = "";
+  }
+});
 
 // === INIT ===
 checkSession();
