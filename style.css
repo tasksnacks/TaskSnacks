@@ -7,15 +7,15 @@ body {
 }
 
 .container {
-  max-width: 600px;
+  max-width: 720px;
   margin: 40px auto;
-  padding: 0 16px;
+  padding: 0 16px 60px;
   text-align: center;
 }
 
 h1 {
-  font-size: 2.5em;
-  margin-bottom: 8px;
+  font-size: 2.6rem;
+  margin-bottom: 4px;
 }
 
 .subtitle {
@@ -23,107 +23,32 @@ h1 {
   color: #555;
 }
 
-textarea {
-  width: 100%;
-  height: 140px;
-  padding: 12px;
-  font-size: 1em;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  box-sizing: border-box;
-}
-
-button#organizeBtn {
-  margin-top: 16px;
-  padding: 12px 20px;
-  font-size: 1em;
-  color: white;
-  background: #0077ff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-button#organizeBtn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-#tasksContainer {
-  margin-top: 24px;
-  text-align: left;
-}
-
-.task-item {
-  padding: 10px 14px;
-  border-radius: 6px;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: white;
-  border: 1px solid #ddd;
-  transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
-}
-
-.task-item.high {
-  border-left: 5px solid #ff3b30;
-}
-
-.task-item.medium {
-  border-left: 5px solid #ff9500;
-}
-
-.task-item.low {
-  border-left: 5px solid #34c759;
-}
-
-.task-item label {
-  flex: 1;
-  margin-left: 10px;
-}
-
-.fun-fact {
-  margin-top: 20px;
-  font-style: italic;
-  color: #0077ff;
-}
-
-.coffee {
-  margin-top: 30px;
-  font-size: 14px;
-}
-
-.coffee a {
-  text-decoration: none;
-  color: #333;
-  padding: 8px 12px;
-  border: 1px solid #0077ff;
-  border-radius: 6px;
-  background: #e7f1ff;
-}
-
 /* Auth section */
 #authSection {
   margin-bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
 }
 
 #authSection input {
   width: 100%;
   max-width: 260px;
   padding: 8px;
-  margin: 4px;
   border-radius: 6px;
-  border: 1px solid #ccc;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
 }
 
 #authSection button {
-  margin: 4px;
-  padding: 8px 12px;
+  padding: 8px 14px;
   border-radius: 6px;
   border: none;
   background: #e5e7eb;
   cursor: pointer;
+  font-size: 14px;
 }
 
 #authSection button#logoutBtn {
@@ -132,24 +57,25 @@ button#organizeBtn:disabled {
 }
 
 .auth-status {
+  flex-basis: 100%;
   font-size: 0.9em;
   color: #4b5563;
+  margin-top: 4px;
 }
 
-/* (Old dateSection no longer used, but safe to keep) */
-#dateSection {
-  margin: 12px 0;
-}
-
-/* Calendar section */
-#calendarSection {
-  margin: 16px 0;
+/* Calendar */
+.calendar-section {
+  margin: 16px 0 8px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
 }
 
 .calendar-header {
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   gap: 8px;
   margin-bottom: 8px;
 }
@@ -158,34 +84,35 @@ button#organizeBtn:disabled {
   border: none;
   background: #e5e7eb;
   border-radius: 999px;
-  padding: 4px 10px;
+  width: 28px;
+  height: 28px;
   cursor: pointer;
 }
 
-#calendarMonthLabel {
+.calendar-month-label {
   font-weight: 600;
 }
 
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-  text-align: center;
-  font-size: 0.85rem;
+  gap: 6px;
+  margin-top: 4px;
 }
 
 .cal-day-name {
-  font-weight: 600;
-  color: #6b7280;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #9ca3af;
 }
 
 .cal-day {
-  min-height: 40px;
-  padding: 4px;
-  border-radius: 6px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  padding: 6px 0;
+  border-radius: 8px;
+  background: #f3f4f6;
+  font-size: 13px;
   cursor: pointer;
+  border: 1px solid transparent;
 }
 
 .cal-day.has-tasks {
@@ -195,125 +122,165 @@ button#organizeBtn:disabled {
 
 .cal-day.selected {
   background: #2563eb;
-  color: white;
   border-color: #1d4ed8;
+  color: white;
 }
 
 /* Sort section */
-#sortSection {
+.sort-section {
   margin: 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.sort-section label {
+  color: #4b5563;
+}
+
+.sort-section select {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+}
+
+/* Brain dump */
+textarea {
+  width: 100%;
+  height: 140px;
+  padding: 12px;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+/* Organize button */
+button#organizeBtn {
+  margin-top: 16px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  color: white;
+  background: #2563eb;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button#organizeBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Manual add */
+.manual-add {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.manual-add input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+}
+
+.manual-add button {
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: none;
+  background: #16a34a;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Tasks list */
+#tasksContainer {
+  margin-top: 20px;
   text-align: left;
 }
 
-#sortMode {
-  margin-left: 4px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-.task-controls {
+.task-item {
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 10px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-left: 8px;
-  font-size: 0.8rem;
+  justify-content: space-between;
+  background: white;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
 }
 
-.priority-select {
-  font-size: 0.75rem;
-  padding: 2px 4px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
+.task-item.high {
+  border-left: 4px solid #ef4444;
 }
 
-.task-delete,
-.task-move {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 0.8rem;
-  padding: 2px 4px;
+.task-item.medium {
+  border-left: 4px solid #f97316;
 }
 
-.task-delete {
-  color: #dc2626;
-}
-
-.task-move {
-  color: #6b7280;
-}
-
-/* Manual add task */
-#manualAddSection {
-  margin-top: 16px;
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-}
-
-#manualTaskInput {
-  flex: 1;
-  max-width: 350px;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 0.95rem;
-}
-
-#manualAddBtn {
-  padding: 8px 14px;
-  border-radius: 6px;
-  border: none;
-  background: #10b981;
-  color: white;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-/* Drag styling */
-.task-item {
-  cursor: grab;
+.task-item.low {
+  border-left: 4px solid #22c55e;
 }
 
 .task-item.dragging {
   opacity: 0.6;
-  cursor: grabbing;
 }
 
-/* Controls for each task (priority, arrows, delete) */
+.task-item label {
+  flex: 1;
+  margin-left: 10px;
+}
+
+/* Task controls */
 .task-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   margin-left: 8px;
-  font-size: 0.8rem;
 }
 
 .priority-select {
-  font-size: 0.75rem;
-  padding: 2px 4px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+  background: #f9fafb;
 }
 
-.task-delete,
-.task-move {
+.task-move,
+.task-delete {
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 0.8rem;
-  padding: 2px 4px;
+  font-size: 14px;
+  padding: 4px 6px;
 }
 
 .task-delete {
-  color: #dc2626;
+  color: #ef4444;
 }
 
-.task-move {
-  color: #6b7280;
+/* Fun fact */
+.fun-fact {
+  margin-top: 18px;
+  font-style: italic;
+  color: #2563eb;
+  font-size: 14px;
 }
 
+/* Undo bar */
 .undo-bar {
   position: fixed;
   left: 50%;
@@ -352,4 +319,39 @@ button#organizeBtn:disabled {
 
 .undo-bar button:hover {
   background: #1f2937;
+}
+
+/* Ko-fi */
+.coffee {
+  margin-top: 30px;
+  font-size: 14px;
+}
+
+.coffee a {
+  text-decoration: none;
+  color: #2563eb;
+  padding: 8px 14px;
+  border: 1px solid #2563eb;
+  border-radius: 999px;
+  background: #e0edff;
+}
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
+  .container {
+    margin-top: 24px;
+  }
+
+  .calendar-section {
+    padding: 10px;
+  }
+
+  .manual-add {
+    flex-direction: column;
+  }
+
+  .manual-add input,
+  .manual-add button {
+    width: 100%;
+  }
 }
