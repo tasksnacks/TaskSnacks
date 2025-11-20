@@ -30,7 +30,60 @@ function getRandomFunFact() {
   lastFunFact = fact;
   return fact;
 }
+let lastDeletedTask = null;
+let undoTimeoutId = null;
 
+function showUndo(task) {
+  lastDeletedTask = task;
+  const undoBar = document.getElementById("undoBar");
+  if (!undoBar) return;
+
+  undoBar.innerHTML = `
+    <span>Task deleted</span>
+    <button id="undoBtn">Undo</button>
+  `;
+  undoBar.classList.add("visible");
+
+  if (undoTimeoutId) clearTimeout(undoTimeoutId);
+  undoTimeoutId = setTimeout(() => {
+    hideUndoBar();
+    lastDeletedTask = null;
+  }, 5000);
+
+  const undoBtn = document.getElementById("undoBtn");
+  if (undoBtn) {
+    undoBtn.onclick = async () => {
+      if (!lastDeletedTask) return;
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .insert({
+          user_id: lastDeletedTask.user_id,
+          task_date: lastDeletedTask.task_date,
+          task_text: lastDeletedTask.task_text,
+          priority: lastDeletedTask.priority,
+          completed: lastDeletedTask.completed,
+          sort_index: lastDeletedTask.sort_index ?? 0
+        })
+        .select()
+        .single();
+
+      if (!error && data) {
+        renderTaskItem(data);
+        await saveTaskOrderToDatabase();
+        await renderCalendar();
+      }
+
+      hideUndoBar();
+      lastDeletedTask = null;
+    };
+  }
+}
+
+function hideUndoBar() {
+  const undoBar = document.getElementById("undoBar");
+  if (undoBar) undoBar.classList.remove("visible");
+}
 // DOM refs
 const organizeBtn = document.getElementById("organizeBtn");
 const brainDump = document.getElementById("brainDump");
