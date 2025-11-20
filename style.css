@@ -465,3 +465,7 @@ button#organizeBtn:disabled {
     width: 100%;
   }
 }
+
+#authSection button {
+  color: var(--text-main); /* dark text */
+}
