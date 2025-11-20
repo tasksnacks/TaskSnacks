@@ -12,7 +12,9 @@
   --card-bg: #ffffff;
   --border-subtle: #e5e7eb;
 }
-
+h1, h2, h3, label, p, span, div, button, input, textarea, select {
+  color: var(--text-main);
+}
 /* Page background now mainly aqua/blue, green only as a hint */
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
