@@ -1,19 +1,30 @@
 :root {
-  --primary: #75bde0;       /* main blue */
-  --primary-soft: #78d1d2;  /* aqua */
-  --accent-green: #97dbae;  /* mint */
-  --accent-soft: #cde4ad;   /* light lime */
+  /* Main brand colors */
+  --primary: #75bde0;       /* soft blue */
+  --primary-soft: #78d1d2;  /* aqua (slightly brighter) */
+
+  /* Accent – use sparingly */
+  --accent-green: #97dbae;  /* mint for success / Add button */
+  --accent-soft: #cde4ad;   /* very light lime for subtle background */
+
   --text-main: #1f2937;
   --text-muted: #6b7280;
   --card-bg: #ffffff;
   --border-subtle: #e5e7eb;
 }
 
+/* Page background now mainly aqua/blue, green only as a hint */
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   margin: 0;
   padding: 0;
-  background: linear-gradient(180deg, var(--accent-soft) 0%, #f7fbff 40%, #ffffff 100%);
+  background: linear-gradient(
+    180deg,
+    var(--primary-soft) 0%,
+    var(--primary) 26%,
+    #f7fbff 60%,
+    #ffffff 100%
+  );
   color: var(--text-main);
 }
 
@@ -28,7 +39,7 @@ body {
 h1 {
   font-size: 2.6rem;
   margin-bottom: 4px;
-  color: var(--primary);
+  color: var(--primary-soft);
 }
 
 .subtitle {
@@ -65,11 +76,13 @@ h1 {
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
 }
 
 #authSection button#logoutBtn {
   background: #f97373;
   color: white;
+  box-shadow: 0 6px 16px rgba(248, 113, 113, 0.35);
 }
 
 #authSection button:hover {
@@ -86,11 +99,11 @@ h1 {
 /* Calendar */
 .calendar-section {
   margin: 16px 0 8px;
-  padding: 12px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  padding: 16px 16px 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.14);
 }
 
 .calendar-header {
@@ -110,6 +123,7 @@ h1 {
   cursor: pointer;
   color: #0f172a;
   font-weight: 600;
+  box-shadow: 0 6px 14px rgba(34, 197, 235, 0.35);
 }
 
 .calendar-header button:hover {
@@ -136,7 +150,7 @@ h1 {
 
 .cal-day {
   padding: 6px 0;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #f3f4f6;
   font-size: 13px;
   cursor: pointer;
@@ -145,19 +159,19 @@ h1 {
 }
 
 .cal-day.has-tasks {
-  background: #e0f7ff;
+  background: #e5f6ff;
   border-color: var(--primary-soft);
 }
 
 .cal-day.selected {
-  background: var(--primary);
-  border-color: #4f9bc1;
+  background: var(--primary-soft);
+  border-color: var(--primary);
   color: white;
 }
 
 /* Sort section */
 .sort-section {
-  margin: 12px 0;
+  margin: 14px 0 10px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -184,25 +198,25 @@ textarea {
   padding: 12px;
   font-size: 1em;
   border: 1px solid var(--border-subtle);
-  border-radius: 16px;
+  border-radius: 18px;
   box-sizing: border-box;
   resize: vertical;
   background: #ffffff;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
 /* Organize button */
 button#organizeBtn {
   margin-top: 16px;
-  padding: 12px 24px;
+  padding: 12px 26px;
   font-size: 1rem;
   color: #0f172a;
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary-soft), var(--primary));
   border: none;
   border-radius: 999px;
   cursor: pointer;
   font-weight: 600;
-  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.35);
+  box-shadow: 0 12px 28px rgba(59, 130, 246, 0.4);
 }
 
 button#organizeBtn:hover:not(:disabled) {
@@ -217,7 +231,7 @@ button#organizeBtn:disabled {
 
 /* Manual add */
 .manual-add {
-  margin-top: 12px;
+  margin-top: 14px;
   display: flex;
   gap: 8px;
   align-items: center;
@@ -225,7 +239,7 @@ button#organizeBtn:disabled {
 
 .manual-add input {
   flex: 1;
-  padding: 8px 10px;
+  padding: 8px 12px;
   border-radius: 999px;
   border: 1px solid var(--border-subtle);
   font-size: 14px;
@@ -233,10 +247,10 @@ button#organizeBtn:disabled {
 }
 
 .manual-add button {
-  padding: 8px 18px;
+  padding: 8px 20px;
   border-radius: 999px;
   border: none;
-  background: var(--accent-green);
+  background: var(--accent-green); /* mint accent here */
   color: #064e3b;
   font-size: 14px;
   cursor: pointer;
@@ -250,39 +264,39 @@ button#organizeBtn:disabled {
 
 /* Tasks list */
 #tasksContainer {
-  margin-top: 20px;
+  margin-top: 22px;
   text-align: left;
 }
 
 .task-item {
   padding: 10px 14px;
-  border-radius: 14px;
+  border-radius: 16px;
   margin-bottom: 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: var(--card-bg);
   border: 1px solid var(--border-subtle);
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
   transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease,
     box-shadow 0.15s ease;
 }
 
 .task-item.high {
-  border-left: 5px solid var(--primary);
+  border-left: 5px solid var(--primary);      /* strong blue */
 }
 
 .task-item.medium {
-  border-left: 5px solid var(--primary-soft);
+  border-left: 5px solid var(--primary-soft); /* aqua */
 }
 
 .task-item.low {
-  border-left: 5px solid var(--accent-green);
+  border-left: 5px solid rgba(151, 219, 174, 0.9); /* softer mint */
 }
 
 .task-item.dragging {
   opacity: 0.7;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.15);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
 }
 
 .task-item label {
@@ -327,11 +341,11 @@ button#organizeBtn:disabled {
   color: #ef4444;
 }
 
-/* Fun fact small text */
+/* Fun fact small text under list */
 .fun-fact {
   margin-top: 18px;
   font-style: italic;
-  color: var(--primary);
+  color: var(--primary-soft);
   font-size: 14px;
 }
 
@@ -362,7 +376,7 @@ button#organizeBtn:disabled {
   font-size: 0.9rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--primary);
+  color: var(--primary-soft);
 }
 
 .fun-fact-popup.visible {
@@ -421,10 +435,11 @@ button#organizeBtn:disabled {
 .coffee a {
   text-decoration: none;
   color: #0f172a;
-  padding: 8px 14px;
+  padding: 8px 18px;
   border: 1px solid var(--primary-soft);
   border-radius: 999px;
-  background: #e0f7ff;
+  background: rgba(120, 209, 210, 0.15);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.2);
 }
 
 /* Responsive tweaks */
@@ -434,7 +449,7 @@ button#organizeBtn:disabled {
   }
 
   .calendar-section {
-    padding: 10px;
+    padding: 12px;
   }
 
   .manual-add {
