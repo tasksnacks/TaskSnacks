@@ -1,26 +1,39 @@
+:root {
+  --primary: #75bde0;       /* main blue */
+  --primary-soft: #78d1d2;  /* aqua */
+  --accent-green: #97dbae;  /* mint */
+  --accent-soft: #cde4ad;   /* light lime */
+  --text-main: #1f2937;
+  --text-muted: #6b7280;
+  --card-bg: #ffffff;
+  --border-subtle: #e5e7eb;
+}
+
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   margin: 0;
   padding: 0;
-  background: #f4f6f8;
-  color: #333;
+  background: linear-gradient(180deg, var(--accent-soft) 0%, #f7fbff 40%, #ffffff 100%);
+  color: var(--text-main);
 }
 
 .container {
   max-width: 720px;
-  margin: 40px auto;
-  padding: 0 16px 60px;
+  margin: 32px auto 60px;
+  padding: 0 16px 40px;
   text-align: center;
+  background: transparent;
 }
 
 h1 {
   font-size: 2.6rem;
   margin-bottom: 4px;
+  color: var(--primary);
 }
 
 .subtitle {
   margin-bottom: 24px;
-  color: #555;
+  color: var(--text-muted);
 }
 
 /* Auth section */
@@ -37,29 +50,36 @@ h1 {
   width: 100%;
   max-width: 260px;
   padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
   font-size: 14px;
+  background: #f9fafb;
 }
 
 #authSection button {
   padding: 8px 14px;
-  border-radius: 6px;
+  border-radius: 999px;
   border: none;
-  background: #e5e7eb;
+  background: var(--primary-soft);
+  color: #0f172a;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
 }
 
 #authSection button#logoutBtn {
-  background: #ef4444;
+  background: #f97373;
   color: white;
+}
+
+#authSection button:hover {
+  filter: brightness(0.95);
 }
 
 .auth-status {
   flex-basis: 100%;
   font-size: 0.9em;
-  color: #4b5563;
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
@@ -67,9 +87,10 @@ h1 {
 .calendar-section {
   margin: 16px 0 8px;
   padding: 12px;
-  border-radius: 12px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
 .calendar-header {
@@ -82,15 +103,22 @@ h1 {
 
 .calendar-header button {
   border: none;
-  background: #e5e7eb;
+  background: var(--primary-soft);
   border-radius: 999px;
   width: 28px;
   height: 28px;
   cursor: pointer;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.calendar-header button:hover {
+  filter: brightness(0.95);
 }
 
 .calendar-month-label {
   font-weight: 600;
+  color: var(--text-main);
 }
 
 .calendar-grid {
@@ -108,21 +136,22 @@ h1 {
 
 .cal-day {
   padding: 6px 0;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #f3f4f6;
   font-size: 13px;
   cursor: pointer;
   border: 1px solid transparent;
+  color: var(--text-main);
 }
 
 .cal-day.has-tasks {
-  background: #e0f2fe;
-  border-color: #38bdf8;
+  background: #e0f7ff;
+  border-color: var(--primary-soft);
 }
 
 .cal-day.selected {
-  background: #2563eb;
-  border-color: #1d4ed8;
+  background: var(--primary);
+  border-color: #4f9bc1;
   color: white;
 }
 
@@ -137,14 +166,15 @@ h1 {
 }
 
 .sort-section label {
-  color: #4b5563;
+  color: var(--text-muted);
 }
 
 .sort-section select {
   padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-subtle);
   font-size: 14px;
+  background: #f9fafb;
 }
 
 /* Brain dump */
@@ -153,10 +183,12 @@ textarea {
   height: 140px;
   padding: 12px;
   font-size: 1em;
-  border: 1px solid #ccc;
-  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
   box-sizing: border-box;
   resize: vertical;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
 }
 
 /* Organize button */
@@ -164,17 +196,23 @@ button#organizeBtn {
   margin-top: 16px;
   padding: 12px 24px;
   font-size: 1rem;
-  color: white;
-  background: #2563eb;
+  color: #0f172a;
+  background: var(--primary);
   border: none;
   border-radius: 999px;
   cursor: pointer;
   font-weight: 600;
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.35);
+}
+
+button#organizeBtn:hover:not(:disabled) {
+  filter: brightness(0.96);
 }
 
 button#organizeBtn:disabled {
   opacity: 0.6;
   cursor: default;
+  box-shadow: none;
 }
 
 /* Manual add */
@@ -189,18 +227,25 @@ button#organizeBtn:disabled {
   flex: 1;
   padding: 8px 10px;
   border-radius: 999px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-subtle);
   font-size: 14px;
+  background: #ffffff;
 }
 
 .manual-add button {
   padding: 8px 18px;
   border-radius: 999px;
   border: none;
-  background: #16a34a;
-  color: white;
+  background: var(--accent-green);
+  color: #064e3b;
   font-size: 14px;
   cursor: pointer;
+  font-weight: 500;
+  box-shadow: 0 6px 16px rgba(34, 197, 94, 0.25);
+}
+
+.manual-add button:hover {
+  filter: brightness(0.96);
 }
 
 /* Tasks list */
@@ -211,31 +256,33 @@ button#organizeBtn:disabled {
 
 .task-item {
   padding: 10px 14px;
-  border-radius: 10px;
+  border-radius: 14px;
   margin-bottom: 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: white;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
-  transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+  transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .task-item.high {
-  border-left: 4px solid #ef4444;
+  border-left: 5px solid var(--primary);
 }
 
 .task-item.medium {
-  border-left: 4px solid #f97316;
+  border-left: 5px solid var(--primary-soft);
 }
 
 .task-item.low {
-  border-left: 4px solid #22c55e;
+  border-left: 5px solid var(--accent-green);
 }
 
 .task-item.dragging {
-  opacity: 0.6;
+  opacity: 0.7;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.15);
 }
 
 .task-item label {
@@ -254,7 +301,7 @@ button#organizeBtn:disabled {
 .priority-select {
   padding: 4px 8px;
   border-radius: 999px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-subtle);
   font-size: 13px;
   background: #f9fafb;
 }
@@ -268,16 +315,60 @@ button#organizeBtn:disabled {
   padding: 4px 6px;
 }
 
+.task-move {
+  color: #9ca3af;
+}
+
+.task-move:hover {
+  color: #4b5563;
+}
+
 .task-delete {
   color: #ef4444;
 }
 
-/* Fun fact */
+/* Fun fact small text */
 .fun-fact {
   margin-top: 18px;
   font-style: italic;
-  color: #2563eb;
+  color: var(--primary);
   font-size: 14px;
+}
+
+/* Fun fact popup */
+.fun-fact-popup {
+  position: fixed;
+  left: 50%;
+  top: 20%;
+  transform: translateX(-50%) scale(0.9);
+  max-width: 90%;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 16px 20px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.25);
+  border-top: 4px solid var(--primary-soft);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-main);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 60;
+}
+
+.fun-fact-popup strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.fun-fact-popup.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) scale(1);
 }
 
 /* Undo bar */
@@ -329,11 +420,11 @@ button#organizeBtn:disabled {
 
 .coffee a {
   text-decoration: none;
-  color: #2563eb;
+  color: #0f172a;
   padding: 8px 14px;
-  border: 1px solid #2563eb;
+  border: 1px solid var(--primary-soft);
   border-radius: 999px;
-  background: #e0edff;
+  background: #e0f7ff;
 }
 
 /* Responsive tweaks */
