@@ -34,7 +34,18 @@ body {
 
   color: var(--text-main);
 }
-
+.task-drag-handle {
+  margin-right: 8px;
+  font-size: 16px;
+  cursor: grab;
+  user-select: none;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+}
+.task-drag-handle:active {
+  cursor: grabbing;
+}
 .container {
   max-width: 720px;
   margin: 32px auto 60px;
