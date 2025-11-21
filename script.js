@@ -98,19 +98,6 @@ const manualAddSection = document.getElementById("manualAddSection");
 const manualTaskInput = document.getElementById("manualTaskInput");
 const manualAddBtn = document.getElementById("manualAddBtn");
 
-// Hidden date input used to move tasks between days
-let moveDateInput = null;
-function ensureMoveDateInput() {
-  if (moveDateInput) return moveDateInput;
-  moveDateInput = document.createElement("input");
-  moveDateInput.type = "date";
-  moveDateInput.style.position = "fixed";
-  moveDateInput.style.left = "-9999px";
-  moveDateInput.style.top = "-9999px";
-  document.body.appendChild(moveDateInput);
-  return moveDateInput;
-}
-
 // === STATE ===
 let currentUser = null;
 let currentMonthDate = new Date(); // which month is shown in the calendar
@@ -324,13 +311,11 @@ async function renderCalendar() {
     calendarGrid.appendChild(el);
   });
 
-  // Empty cells before first day
   for (let i = 0; i < firstDay; i++) {
     const empty = document.createElement("div");
     calendarGrid.appendChild(empty);
   }
 
-  // Actual days
   for (let day = 1; day <= daysInMonth; day++) {
     const dateObj = new Date(year, month, day);
     const dateStr = formatDateLocal(dateObj);
@@ -466,6 +451,113 @@ async function handleDelete(task, div) {
   }, 150);
 }
 
+// === Move task to another date: simple inline dialog ===
+function showMoveDateDialog(task) {
+  if (!currentUser) return;
+
+  // overlay
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.left = "0";
+  overlay.style.top = "0";
+  overlay.style.width = "100%";
+  overlay.style.height = "100%";
+  overlay.style.background = "rgba(15,23,42,0.35)";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.zIndex = "80";
+
+  const box = document.createElement("div");
+  box.style.background = "#fff";
+  box.style.padding = "16px 18px";
+  box.style.borderRadius = "16px";
+  box.style.minWidth = "260px";
+  box.style.maxWidth = "90%";
+  box.style.boxShadow = "0 18px 40px rgba(15,23,42,0.35)";
+  box.innerHTML = `
+    <div style="font-weight:600; margin-bottom:8px; font-size:15px;">Move task to…</div>
+  `;
+
+  const dateInput = document.createElement("input");
+  dateInput.type = "date";
+  dateInput.value = task.task_date || taskDateInput.value;
+  dateInput.style.width = "100%";
+  dateInput.style.padding = "6px 8px";
+  dateInput.style.borderRadius = "8px";
+  dateInput.style.border = "1px solid #e5e7eb";
+  dateInput.style.marginBottom = "12px";
+
+  const buttonsRow = document.createElement("div");
+  buttonsRow.style.display = "flex";
+  buttonsRow.style.justifyContent = "flex-end";
+  buttonsRow.style.gap = "8px";
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.style.border = "none";
+  cancelBtn.style.borderRadius = "999px";
+  cancelBtn.style.padding = "6px 12px";
+  cancelBtn.style.background = "#e5e7eb";
+  cancelBtn.style.cursor = "pointer";
+  cancelBtn.onclick = () => {
+    document.body.removeChild(overlay);
+  };
+
+  const moveBtn = document.createElement("button");
+  moveBtn.textContent = "Move";
+  moveBtn.style.border = "none";
+  moveBtn.style.borderRadius = "999px";
+  moveBtn.style.padding = "6px 12px";
+  moveBtn.style.background = "#60a5fa";
+  moveBtn.style.color = "#fff";
+  moveBtn.style.cursor = "pointer";
+
+  moveBtn.onclick = async () => {
+    const newDate = dateInput.value;
+    if (!newDate || newDate === task.task_date) {
+      document.body.removeChild(overlay);
+      return;
+    }
+
+    try {
+      const { data: existing, error } = await supabase
+        .from("tasks")
+        .select("id")
+        .eq("user_id", currentUser.id)
+        .eq("task_date", newDate);
+
+      if (error) console.error("Move task date error:", error);
+
+      const newIndex = existing ? existing.length : 0;
+
+      await supabase
+        .from("tasks")
+        .update({ task_date: newDate, sort_index: newIndex })
+        .eq("id", task.id);
+
+      await loadTasksForSelectedDate();
+      await renderCalendar();
+    } catch (err) {
+      console.error("Move task date error:", err);
+      alert("Could not move task.");
+    } finally {
+      document.body.removeChild(overlay);
+    }
+  };
+
+  buttonsRow.appendChild(cancelBtn);
+  buttonsRow.appendChild(moveBtn);
+
+  box.appendChild(dateInput);
+  box.appendChild(buttonsRow);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  // focus for mobile keyboard
+  dateInput.focus();
+}
+
 // === RENDER TASK ITEM ===
 function renderTaskItem(task) {
   const div = document.createElement("div");
@@ -486,7 +578,7 @@ function renderTaskItem(task) {
 
   // Touch / pointer support (for phones & tablets)
   div.addEventListener("pointerdown", (e) => {
-    if (e.pointerType === "mouse") return;
+    if (e.pointerType !== "touch") return; // only touch here
 
     draggedTaskElement = div;
     div.classList.add("dragging");
@@ -514,43 +606,6 @@ function renderTaskItem(task) {
     div.addEventListener("pointercancel", handleUp);
   });
 
-  // --- Swipe-to-delete (mobile) ---
-  let touchStartX = null;
-  let touchCurrentX = null;
-  let isSwiping = false;
-
-  div.addEventListener("touchstart", (e) => {
-    if (e.touches.length !== 1) return;
-    touchStartX = e.touches[0].clientX;
-    touchCurrentX = touchStartX;
-    isSwiping = true;
-  }, { passive: true });
-
-  div.addEventListener("touchmove", (e) => {
-    if (!isSwiping) return;
-    touchCurrentX = e.touches[0].clientX;
-    const deltaX = touchCurrentX - touchStartX;
-
-    if (deltaX < 0) {
-      div.style.transform = `translateX(${deltaX}px)`;
-      const opacity = Math.max(0.3, 1 + deltaX / 200);
-      div.style.opacity = String(opacity);
-    }
-  }, { passive: true });
-
-  div.addEventListener("touchend", () => {
-    if (!isSwiping) return;
-    isSwiping = false;
-
-    const deltaX = touchCurrentX - touchStartX;
-    if (deltaX < -80) {
-      handleDelete(task, div);
-    } else {
-      div.style.transform = "translateX(0)";
-      div.style.opacity = "1";
-    }
-  });
-
   // Left side (checkbox + text)
   const left = document.createElement("div");
   left.style.display = "flex";
@@ -576,6 +631,58 @@ function renderTaskItem(task) {
   label.textContent = task.task_text;
   label.style.marginLeft = "10px";
   label.style.flex = "1";
+  label.style.cursor = "text";
+
+  // === RENAME on double-click ===
+  label.addEventListener("dblclick", () => {
+    if (!currentUser) return;
+
+    const currentText = label.textContent;
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = currentText;
+    input.style.width = "100%";
+    input.style.borderRadius = "8px";
+    input.style.border = "1px solid #d1d5db";
+    input.style.padding = "2px 6px";
+    label.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const finishEdit = async (save) => {
+      const newText = save ? input.value.trim() : currentText;
+      const newLabel = document.createElement("label");
+      newLabel.textContent = newText || currentText;
+      newLabel.style.marginLeft = "10px";
+      newLabel.style.flex = "1";
+      newLabel.style.cursor = "text";
+
+      // reattach rename listener
+      newLabel.addEventListener("dblclick", () => {
+        label.dispatchEvent(new MouseEvent("dblclick"));
+      });
+
+      input.replaceWith(newLabel);
+
+      if (save && newText && newText !== currentText) {
+        await supabase
+          .from("tasks")
+          .update({ task_text: newText })
+          .eq("id", task.id);
+      }
+    };
+
+    input.addEventListener("blur", () => finishEdit(true));
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        finishEdit(true);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        finishEdit(false);
+      }
+    });
+  });
 
   left.appendChild(checkbox);
   left.appendChild(label);
@@ -609,49 +716,13 @@ function renderTaskItem(task) {
     }
   });
 
-  // Move to another day
+  // Move to another day (uses inline dialog, works on mobile)
   const moveDateBtn = document.createElement("button");
   moveDateBtn.textContent = "📆";
   moveDateBtn.title = "Move to another day";
   moveDateBtn.className = "task-move-date";
-  moveDateBtn.addEventListener("click", async () => {
-    if (!currentUser) return;
-
-    const input = ensureMoveDateInput();
-    input.value = task.task_date || taskDateInput.value;
-
-    input.onchange = async () => {
-      const newDate = input.value;
-      if (!newDate || newDate === task.task_date) return;
-
-      try {
-        const { data: existing } = await supabase
-          .from("tasks")
-          .select("id")
-          .eq("user_id", currentUser.id)
-          .eq("task_date", newDate);
-
-        const newIndex = existing ? existing.length : 0;
-
-        await supabase
-          .from("tasks")
-          .update({ task_date: newDate, sort_index: newIndex })
-          .eq("id", task.id);
-
-        await loadTasksForSelectedDate();
-        await renderCalendar();
-      } catch (err) {
-        console.error("Move task date error:", err);
-        alert("Could not move task.");
-      }
-    };
-
-    try {
-      if (input.showPicker) input.showPicker();
-      else input.click();
-    } catch {
-      input.click();
-    }
+  moveDateBtn.addEventListener("click", () => {
+    showMoveDateDialog(task);
   });
 
   // Move buttons (mouse)
