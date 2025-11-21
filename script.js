@@ -9,14 +9,15 @@ const supabaseKey =
 // Supabase client
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-// --- Date helpers (fixes the 1-day ahead bug) ---
+// --- Date helper (LOCAL date, fixes 1-day ahead bug) ---
 function formatDateLocal(d) {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`; // YYYY-MM-DD for <input type="date">
 }
-// Fun facts (local only)
+
+// === Fun facts (local, no API cost) ===
 const funFacts = [
   "Sea otters hold hands while sleeping so they don't drift apart.",
   "Cows have best friends and get stressed when separated.",
@@ -40,8 +41,9 @@ function getRandomFunFact() {
   lastFunFact = fact;
   return fact;
 }
+
 function showFunFact(fact) {
-  // small text at the bottom as before
+  // small text at the bottom
   funFactContainer.textContent = `🎉 Fun fact: ${fact}`;
 
   // BIG popup in the middle
@@ -50,7 +52,6 @@ function showFunFact(fact) {
   popup.innerHTML = `<strong>Fun fact</strong><br>${fact}`;
   document.body.appendChild(popup);
 
-  // trigger CSS animation
   requestAnimationFrame(() => {
     popup.classList.add("visible");
   });
@@ -64,12 +65,12 @@ function showFunFact(fact) {
     });
   }
 
-  // hide after 2.5s
   setTimeout(() => {
     popup.classList.remove("visible");
     setTimeout(() => popup.remove(), 200);
   }, 2500);
 }
+
 // === DOM refs ===
 const organizeBtn = document.getElementById("organizeBtn");
 const brainDump = document.getElementById("brainDump");
@@ -109,11 +110,11 @@ function ensureMoveDateInput() {
   document.body.appendChild(moveDateInput);
   return moveDateInput;
 }
+
 // === STATE ===
 let currentUser = null;
 let currentMonthDate = new Date(); // which month is shown in the calendar
-let draggedTaskElement = null;     // for drag & drop
-
+let draggedTaskElement = null;     // for drag & drop / touch
 let lastDeletedTask = null;        // for undo
 let undoTimeoutId = null;
 
@@ -217,12 +218,12 @@ signupBtn.addEventListener("click", async () => {
 
   try {
     const { error } = await supabase.auth.signUp({
-  email,
-  password,
-  options: {
-    emailRedirectTo: "https://tasksnacks.github.io/TaskSnacks/"
-  }
-});
+      email,
+      password,
+      options: {
+        emailRedirectTo: "https://tasksnacks.github.io/TaskSnacks/"
+      }
+    });
     if (error) {
       console.error("Sign up error object:", error);
       return alert("Sign up error: " + error.message);
@@ -258,23 +259,18 @@ logoutBtn.addEventListener("click", async () => {
 });
 
 // === DATE & CALENDAR HANDLING ===
-function getLocalDateString(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function setToday() {
   const today = new Date();
-  const todayStr = formatDateLocal(today); // use LOCAL date, not UTC
+  const todayStr = formatDateLocal(today);
   taskDateInput.value = todayStr;
   currentMonthDate = today;
 }
 
-sortMode.addEventListener("change", () => {
-  if (currentUser) loadTasksForSelectedDate();
-});
+if (sortMode) {
+  sortMode.addEventListener("change", () => {
+    if (currentUser) loadTasksForSelectedDate();
+  });
+}
 
 prevMonthBtn.addEventListener("click", () => {
   currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
@@ -292,7 +288,6 @@ async function renderCalendar() {
   const year = currentMonthDate.getFullYear();
   const month = currentMonthDate.getMonth(); // 0-11
 
-  // Label like "November 2025"
   calendarMonthLabel.textContent = currentMonthDate.toLocaleDateString(
     undefined,
     { month: "long", year: "numeric" }
@@ -302,12 +297,10 @@ async function renderCalendar() {
   const firstDay = (first.getDay() + 6) % 7; // Monday = 0
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  const monthStart = first.toISOString().slice(0, 10);
   const monthStart = formatDateLocal(first);
-const last = new Date(year, month + 1, 0);
-const monthEnd = formatDateLocal(last);
+  const last = new Date(year, month + 1, 0);
+  const monthEnd = formatDateLocal(last);
 
-  // Which dates in this month have tasks?
   const { data, error } = await supabase
     .from("tasks")
     .select("task_date")
@@ -321,7 +314,6 @@ const monthEnd = formatDateLocal(last);
 
   const datesWithTasks = new Set((data || []).map((row) => row.task_date));
 
-  // Build grid
   calendarGrid.innerHTML = "";
 
   const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -341,7 +333,8 @@ const monthEnd = formatDateLocal(last);
   // Actual days
   for (let day = 1; day <= daysInMonth; day++) {
     const dateObj = new Date(year, month, day);
-const dateStr = formatDateLocal(dateObj);
+    const dateStr = formatDateLocal(dateObj);
+
     const cell = document.createElement("div");
     cell.className = "cal-day";
     cell.textContent = day;
@@ -397,13 +390,11 @@ async function loadTasksForSelectedDate() {
       (a, b) => (order[a.priority] ?? 3) - (order[b.priority] ?? 3)
     );
   }
-  // if sortMode is "created" ("My order"), we keep DB order
 
   tasks.forEach((task) => {
     renderTaskItem(task);
   });
 
-  // Refresh calendar highlights for has-tasks / selected
   renderCalendar();
 }
 
@@ -411,14 +402,6 @@ async function loadTasksForSelectedDate() {
 tasksContainer.addEventListener("dragover", (e) => {
   e.preventDefault();
   reorderTasksAtY(e.clientY);
-  if (!draggedTaskElement) return;
-
-  const afterElement = getDragAfterElement(tasksContainer, e.clientY);
-  if (afterElement == null) {
-    tasksContainer.appendChild(draggedTaskElement);
-  } else {
-    tasksContainer.insertBefore(draggedTaskElement, afterElement);
-  }
 });
 
 function getDragAfterElement(container, y) {
@@ -438,6 +421,7 @@ function getDragAfterElement(container, y) {
 
   return closest.element;
 }
+
 function reorderTasksAtY(y) {
   if (!draggedTaskElement) return;
   const afterElement = getDragAfterElement(tasksContainer, y);
@@ -447,6 +431,7 @@ function reorderTasksAtY(y) {
     tasksContainer.insertBefore(draggedTaskElement, afterElement);
   }
 }
+
 async function saveTaskOrderToDatabase() {
   if (!tasksContainer) return;
   const items = [...tasksContainer.querySelectorAll(".task-item")];
@@ -459,10 +444,8 @@ async function saveTaskOrderToDatabase() {
   });
   try {
     await Promise.all(updates);
-
-    // After manual reorder, show “my order”
     if (sortMode) {
-      sortMode.value = "created";
+      sortMode.value = "created"; // “My order”
     }
   } catch (e) {
     console.error("Error saving order:", e);
@@ -471,7 +454,6 @@ async function saveTaskOrderToDatabase() {
 
 // === DELETE WITH ANIMATION & UNDO ===
 async function handleDelete(task, div) {
-  // slide + fade
   div.style.opacity = "0";
   div.style.transform = "translateX(20px)";
 
@@ -490,47 +472,48 @@ function renderTaskItem(task) {
   div.className = `task-item ${task.priority || "low"}`;
   div.dataset.taskId = task.id;
 
-  // Make draggable
+  // Make draggable (mouse)
   div.draggable = true;
   div.addEventListener("dragstart", () => {
     draggedTaskElement = div;
     div.classList.add("dragging");
   });
-  div.addEventListener("dragend", () => {
-    draggedTaskElement = null;
-    div.classList.remove("dragging");
-    saveTaskOrderToDatabase();
-  });
-// Touch / pointer support (for phones & tablets)
-div.addEventListener("pointerdown", (e) => {
-  // For mouse, we let normal HTML5 drag handle it
-  if (e.pointerType === "mouse") return;
-
-  draggedTaskElement = div;
-  div.classList.add("dragging");
-
-  const pointerId = e.pointerId;
-  div.setPointerCapture(pointerId);
-
-  const handleMove = (ev) => {
-    reorderTasksAtY(ev.clientY);
-  };
-
-  const handleUp = async (ev) => {
-    div.releasePointerCapture(pointerId);
-    div.removeEventListener("pointermove", handleMove);
-    div.removeEventListener("pointerup", handleUp);
-    div.removeEventListener("pointercancel", handleUp);
-
+  div.addEventListener("dragend", async () => {
     draggedTaskElement = null;
     div.classList.remove("dragging");
     await saveTaskOrderToDatabase();
-  };
+  });
 
-  div.addEventListener("pointermove", handleMove);
-  div.addEventListener("pointerup", handleUp);
-  div.addEventListener("pointercancel", handleUp);
-});
+  // Touch / pointer support (for phones & tablets)
+  div.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse") return;
+
+    draggedTaskElement = div;
+    div.classList.add("dragging");
+
+    const pointerId = e.pointerId;
+    div.setPointerCapture(pointerId);
+
+    const handleMove = (ev) => {
+      reorderTasksAtY(ev.clientY);
+    };
+
+    const handleUp = async () => {
+      div.releasePointerCapture(pointerId);
+      div.removeEventListener("pointermove", handleMove);
+      div.removeEventListener("pointerup", handleUp);
+      div.removeEventListener("pointercancel", handleUp);
+
+      draggedTaskElement = null;
+      div.classList.remove("dragging");
+      await saveTaskOrderToDatabase();
+    };
+
+    div.addEventListener("pointermove", handleMove);
+    div.addEventListener("pointerup", handleUp);
+    div.addEventListener("pointercancel", handleUp);
+  });
+
   // --- Swipe-to-delete (mobile) ---
   let touchStartX = null;
   let touchCurrentX = null;
@@ -548,7 +531,6 @@ div.addEventListener("pointerdown", (e) => {
     touchCurrentX = e.touches[0].clientX;
     const deltaX = touchCurrentX - touchStartX;
 
-    // Only react to left swipe
     if (deltaX < 0) {
       div.style.transform = `translateX(${deltaX}px)`;
       const opacity = Math.max(0.3, 1 + deltaX / 200);
@@ -562,15 +544,14 @@ div.addEventListener("pointerdown", (e) => {
 
     const deltaX = touchCurrentX - touchStartX;
     if (deltaX < -80) {
-      // swiped left far enough → delete
       handleDelete(task, div);
     } else {
-      // snap back
       div.style.transform = "translateX(0)";
       div.style.opacity = "1";
     }
   });
 
+  // Left side (checkbox + text)
   const left = document.createElement("div");
   left.style.display = "flex";
   left.style.alignItems = "center";
@@ -585,12 +566,10 @@ div.addEventListener("pointerdown", (e) => {
       .update({ completed: checkbox.checked })
       .eq("id", task.id);
 
-     if (checkbox.checked) {
-    const fact = getRandomFunFact();
-    if (fact) {
-      showFunFact(fact);
+    if (checkbox.checked) {
+      const fact = getRandomFunFact();
+      if (fact) showFunFact(fact);
     }
-  }
   });
 
   const label = document.createElement("label");
@@ -601,6 +580,7 @@ div.addEventListener("pointerdown", (e) => {
   left.appendChild(checkbox);
   left.appendChild(label);
 
+  // Right side controls
   const controls = document.createElement("div");
   controls.className = "task-controls";
 
@@ -624,13 +604,57 @@ div.addEventListener("pointerdown", (e) => {
     div.classList.remove("high", "medium", "low");
     div.classList.add(newPriority);
 
-    // If sorting by priority, reload list from DB
     if (sortMode && sortMode.value === "priority") {
       loadTasksForSelectedDate();
     }
   });
 
-  // Move buttons (for mouse users)
+  // Move to another day
+  const moveDateBtn = document.createElement("button");
+  moveDateBtn.textContent = "📆";
+  moveDateBtn.title = "Move to another day";
+  moveDateBtn.className = "task-move-date";
+  moveDateBtn.addEventListener("click", async () => {
+    if (!currentUser) return;
+
+    const input = ensureMoveDateInput();
+    input.value = task.task_date || taskDateInput.value;
+
+    input.onchange = async () => {
+      const newDate = input.value;
+      if (!newDate || newDate === task.task_date) return;
+
+      try {
+        const { data: existing } = await supabase
+          .from("tasks")
+          .select("id")
+          .eq("user_id", currentUser.id)
+          .eq("task_date", newDate);
+
+        const newIndex = existing ? existing.length : 0;
+
+        await supabase
+          .from("tasks")
+          .update({ task_date: newDate, sort_index: newIndex })
+          .eq("id", task.id);
+
+        await loadTasksForSelectedDate();
+        await renderCalendar();
+      } catch (err) {
+        console.error("Move task date error:", err);
+        alert("Could not move task.");
+      }
+    };
+
+    try {
+      if (input.showPicker) input.showPicker();
+      else input.click();
+    } catch {
+      input.click();
+    }
+  });
+
+  // Move buttons (mouse)
   const upBtn = document.createElement("button");
   upBtn.textContent = "↑";
   upBtn.title = "Move up";
@@ -668,60 +692,6 @@ div.addEventListener("pointerdown", (e) => {
   controls.appendChild(moveDateBtn);
   controls.appendChild(upBtn);
   controls.appendChild(downBtn);
-  // Move to another day
-const moveDateBtn = document.createElement("button");
-moveDateBtn.textContent = "📆";
-moveDateBtn.title = "Move to another day";
-moveDateBtn.className = "task-move-date";
-moveDateBtn.addEventListener("click", async () => {
-  if (!currentUser) return;
-
-  const input = ensureMoveDateInput();
-  input.value = task.task_date || taskDateInput.value;
-
-  // When user picks a date
-  input.onchange = async () => {
-    const newDate = input.value;
-    if (!newDate || newDate === task.task_date) return;
-
-    try {
-      // Get how many tasks already on the target date to place this at the end
-      const { data: existing } = await supabase
-        .from("tasks")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", currentUser.id)
-        .eq("task_date", newDate);
-
-      const newIndex =
-        existing && typeof existing.length === "number"
-          ? existing.length
-          : 0;
-
-      await supabase
-        .from("tasks")
-        .update({ task_date: newDate, sort_index: newIndex })
-        .eq("id", task.id);
-
-      // Reload current day and calendar
-      await loadTasksForSelectedDate();
-      await renderCalendar();
-    } catch (err) {
-      console.error("Move task date error:", err);
-      alert("Could not move task.");
-    }
-  };
-
-  // Open the date picker (mobile + desktop)
-  try {
-    if (input.showPicker) {
-      input.showPicker();
-    } else {
-      input.click();
-    }
-  } catch {
-    input.click();
-  }
-});
   controls.appendChild(deleteBtn);
 
   div.appendChild(left);
@@ -776,7 +746,7 @@ manualTaskInput.addEventListener("keypress", (e) => {
   }
 });
 
-// === ORGANIZE BUTTON (AI + SAVE, APPEND TASKS) ===
+// === ORGANIZE BUTTON (AI + SAVE, append tasks) ===
 organizeBtn.addEventListener("click", async () => {
   if (!currentUser) return alert("Please log in first.");
   const dumpText = brainDump.value.trim();
@@ -804,7 +774,6 @@ organizeBtn.addEventListener("click", async () => {
       .split("\n")
       .filter((line) => line.trim().startsWith("-"));
 
-    // determine base index so AI tasks are appended in given order
     const existingItems = [
       ...tasksContainer.querySelectorAll(".task-item")
     ];
