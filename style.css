@@ -468,3 +468,7 @@ button#organizeBtn:disabled {
     width: 100%;
   }
 }
+
+.coffee {
+  display: none !important;
+}
