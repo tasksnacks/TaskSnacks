@@ -348,6 +348,18 @@ button#organizeBtn:disabled {
   color: #ef4444;
 }
 
+.task-move-date {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 6px;
+  color: #6b7280;
+}
+
+.task-move-date:hover {
+  color: #374151;
+}
 /* Fun fact small text under list */
 .fun-fact {
   margin-top: 18px;
