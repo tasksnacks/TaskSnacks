@@ -6,39 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <!-- make sure this filename exactly matches your CSS file: style.css -->
   <link rel="stylesheet" href="style.css" />
-  <!-- Minimal, privacy-respectful PostHog tracking -->
-<script>
-  !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){
-    function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),
-      t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}
-    (p=t.createElement("script")).type="text/javascript";
-    p.async=!0;
-    p.src=s.api_host + "/static/array.js";
-    (r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);
-    var u=e;
-    // only expose a *few* methods – no full autocapture API
-    for(void 0!==a?u=e[a]=[]:a="posthog",
-        o="capture identify reset".split(" "),
-        n=0;n<o.length;n++) g(u,o[n]);
-    e._i.push([i,s,a]);
-  },e.__SV=1)}(document,window.posthog||[]);
-
-  // Your real token + EU host
-  posthog.init('phc_656g06HN3SUq2iok3nkjMKjkKWbXYwr96FsgMlWlSl4', {
-    api_host: 'https://eu.i.posthog.com',
-
-    //  Privacy-focused options
-    autocapture: false,              //  no automatic clicks / input / keystrokes
-    disable_session_recording: true, //  no screen recordings
-    disable_cookie: true,            //  no cookies
-    persistence: 'memory',           //  nothing stored in localStorage
-    capture_pageview: true,          //  just page views
-    ip: false                        //  no IP address
-  });
-
-  // Optional: a single custom event without any text from the user
-  posthog.capture('tasksnacks_opened');
-</script>
+  
 </head>
 <body>
   <div class="container">
