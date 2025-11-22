@@ -5,7 +5,12 @@ const workerUrl = "https://tasksnacks.hikarufujiart.workers.dev/"; // your Worke
 const supabaseUrl = "https://fxexewdnbmiybbutcnyv.supabase.co";
 const supabaseKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4ZXhld2RuYm1peWJidXRjbnl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1NTA2MjQsImV4cCI6MjA3OTEyNjYyNH0.E_UQHGX4zeLUajwMIlTRchsCMnr99__cDESOHflp8cc";
-
+// ---- ANALYTICS (PostHog) ----
+function track(eventName, props = {}) {
+  if (window.posthog && typeof window.posthog.capture === "function") {
+    window.posthog.capture(eventName, props);
+  }
+}
 // Supabase client
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
@@ -232,17 +237,21 @@ signupBtn.addEventListener("click", async () => {
         emailRedirectTo: "https://tasksnacks.github.io/TaskSnacks/"
       }
     });
+
     if (error) {
       console.error("Sign up error object:", error);
       return alert("Sign up error: " + error.message);
     }
+
+    // 🔹 analytics: signup success (no email content)
+    track("ts_signup_success");
+
     alert("Check your email to confirm your account.");
   } catch (e) {
     console.error("Sign up threw exception:", e);
     alert("Sign up error: " + e.message);
   }
 });
-
 loginBtn.addEventListener("click", async () => {
   const email = emailInput.value.trim();
   const password = passwordInput.value.trim();
@@ -258,6 +267,9 @@ loginBtn.addEventListener("click", async () => {
   setToday();
   await loadTasksForSelectedDate();
   await renderCalendar();
+
+  // 🔹 analytics: login success
+  track("ts_login_success");
 });
 
 logoutBtn.addEventListener("click", async () => {
@@ -276,8 +288,13 @@ function setToday() {
 
 if (sortMode) {
   sortMode.addEventListener("change", () => {
-    if (currentUser) loadTasksForSelectedDate();
+  if (currentUser) loadTasksForSelectedDate();
+
+  // 🔹 analytics: sort changed
+  track("ts_sort_mode_changed", {
+    mode: sortMode.value   // "created" or "priority"
   });
+});
 }
 
 prevMonthBtn.addEventListener("click", () => {
@@ -553,12 +570,19 @@ function showMoveDateDialog(task) {
       const newIndex = existing ? existing.length : 0;
 
       await supabase
-        .from("tasks")
-        .update({ task_date: newDate, sort_index: newIndex })
-        .eq("id", task.id);
+  .from("tasks")
+  .update({ task_date: newDate, sort_index: newIndex })
+  .eq("id", task.id);
 
-      await loadTasksForSelectedDate();
-      await renderCalendar();
+// 🔹 analytics: moved between days
+track("ts_task_moved_day", {
+  from: task.task_date,
+  to: newDate,
+});
+
+// Reload current day and calendar
+await loadTasksForSelectedDate();
+await renderCalendar();
     } catch (err) {
       console.error("Move task date error:", err);
       alert("Could not move task.");
@@ -608,8 +632,16 @@ function renderTaskItem(task) {
 
     if (checkbox.checked) {
       const fact = getRandomFunFact();
-      if (fact) showFunFact(fact);
+      if (fact) {
+        showFunFact(fact);
+      }
     }
+
+    // 🔹 analytics: completion toggle
+    track("ts_task_completed_toggle", {
+      completed: checkbox.checked,
+      priority: task.priority,
+    });
   });
 
   // Label (task text) with rename on double-click
@@ -865,7 +897,7 @@ async function addManualTask() {
   ];
   const baseIndex = existingItems.length;
 
-  const { data, error } = await supabase
+ const { data, error } = await supabase
     .from("tasks")
     .insert({
       user_id: currentUser.id,
@@ -883,6 +915,11 @@ async function addManualTask() {
     alert("Could not add task.");
     return;
   }
+
+  // 🔹 analytics: manual task created
+  track("ts_task_created", {
+    source: "manual"
+  });
 
   renderTaskItem(data);
   manualTaskInput.value = "";
@@ -912,6 +949,11 @@ organizeBtn.addEventListener("click", async () => {
   funFactContainer.textContent = "";
   hideUndoBar();
 
+  // 🔹 analytics: user used AI
+  track("ts_organize_clicked", {
+    text_length: dumpText.length,   // just length, not content
+  });
+
   try {
     const response = await fetch(workerUrl, {
       method: "POST",
@@ -938,7 +980,7 @@ organizeBtn.addEventListener("click", async () => {
         const priority = match[1].toLowerCase();
         const text = match[2];
 
-        const { data: inserted, error } = await supabase
+ const { data: inserted, error } = await supabase
           .from("tasks")
           .insert({
             user_id: currentUser.id,
@@ -952,6 +994,12 @@ organizeBtn.addEventListener("click", async () => {
           .single();
 
         if (!error && inserted) {
+          // 🔹 analytics: AI task created
+          track("ts_task_created", {
+            source: "ai",
+            priority: priority
+          });
+
           renderTaskItem(inserted);
           baseIndex += 1;
         }
@@ -972,3 +1020,4 @@ organizeBtn.addEventListener("click", async () => {
 
 // === INIT ===
 checkSession();
+track("ts_page_loaded");
