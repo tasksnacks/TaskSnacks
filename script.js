@@ -277,7 +277,9 @@ logoutBtn.addEventListener("click", async () => {
   currentUser = null;
   updateAuthUI();
 });
-
+document.getElementById("refreshBtn").addEventListener("click", () => {
+  location.reload();
+});
 // === DATE & CALENDAR HANDLING ===
 function setToday() {
   const today = new Date();
