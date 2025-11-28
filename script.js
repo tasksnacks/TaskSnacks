@@ -1008,7 +1008,29 @@ organizeBtn.addEventListener("click", async () => {
     brainDump.value = "";
   }
 });
+// === ABOUT MODAL LOGIC ===
+const aboutBtn = document.getElementById("aboutBtn");
+const aboutModal = document.getElementById("aboutModal");
+const aboutCloseBtn = document.getElementById("aboutCloseBtn");
+const aboutBackdrop = document.getElementById("aboutBackdrop");
 
+if (aboutBtn && aboutModal) {
+  aboutBtn.addEventListener("click", () => {
+    aboutModal.classList.remove("hidden");
+  });
+}
+
+if (aboutCloseBtn) {
+  aboutCloseBtn.addEventListener("click", () => {
+    aboutModal.classList.add("hidden");
+  });
+}
+
+if (aboutBackdrop) {
+  aboutBackdrop.addEventListener("click", () => {
+    aboutModal.classList.add("hidden");
+  });
+}
 // === INIT ===
 checkSession();
 track("ts_page_loaded");
