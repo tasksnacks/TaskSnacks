@@ -1181,77 +1181,104 @@ if (aboutBackdrop) {
   });
 }
 
-// === DELETE ACCOUNT FLOW (with "DELETE" confirm + goodbye popup) ===
-if (deleteAccountBtn && deleteModal && finalDeleteBtn && deleteConfirmInput) {
+// --- DELETE ACCOUNT (real flow using Edge Function) ---
+if (deleteAccountBtn) {
   deleteAccountBtn.addEventListener("click", () => {
     if (!currentUser) {
       alert("Please log in first.");
       return;
     }
-    deleteConfirmInput.value = "";
-    finalDeleteBtn.disabled = true;
-    finalDeleteBtn.classList.remove("enabled");
-    deleteModal.classList.remove("hidden");
-  });
 
-  deleteCloseBtn.addEventListener("click", () => {
-    deleteModal.classList.add("hidden");
-  });
-
-  deleteConfirmInput.addEventListener("input", () => {
-    if (deleteConfirmInput.value.trim() === "DELETE") {
-      finalDeleteBtn.disabled = false;
-      finalDeleteBtn.classList.add("enabled");
-    } else {
+    // Open the modal
+    if (deleteModal) {
+      deleteModal.classList.remove("hidden");
+    }
+    if (deleteConfirmInput) {
+      deleteConfirmInput.value = "";
+    }
+    if (finalDeleteBtn) {
       finalDeleteBtn.disabled = true;
-      finalDeleteBtn.classList.remove("enabled");
+    }
+
+    // Close settings dropdown
+    if (settingsMenu) {
+      settingsMenu.classList.add("hidden");
     }
   });
+}
 
+// Close delete modal (X button or backdrop)
+if (deleteCloseBtn) {
+  deleteCloseBtn.addEventListener("click", () => {
+    if (deleteModal) {
+      deleteModal.classList.add("hidden");
+    }
+  });
+}
+if (deleteModal) {
+  const backdrop = deleteModal.querySelector(".modal-backdrop");
+  if (backdrop) {
+    backdrop.addEventListener("click", () => {
+      deleteModal.classList.add("hidden");
+    });
+  }
+}
+
+// Enable final delete only when user typed DELETE
+if (deleteConfirmInput && finalDeleteBtn) {
+  deleteConfirmInput.addEventListener("input", () => {
+    finalDeleteBtn.disabled = deleteConfirmInput.value.trim() !== "DELETE";
+  });
+}
+
+// Final delete click: call Edge Function, log out, show goodbye
+if (finalDeleteBtn) {
   finalDeleteBtn.addEventListener("click", async () => {
     if (!currentUser) {
-      alert("Not logged in.");
+      alert("Please log in first.");
       return;
     }
 
+    if (deleteConfirmInput.value.trim() !== "DELETE") {
+      alert('Please type "DELETE" to confirm.');
+      return;
+    }
+
+    finalDeleteBtn.disabled = true;
+    finalDeleteBtn.textContent = "Deleting…";
+
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
+      // Call your Supabase Edge Function (must be named "delete-user")
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        method: "POST",
+      });
 
-      const response = await fetch(
-        "https://fxexewdnbmiybbutcnyv.supabase.co/functions/v1/delete-user",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json"
-          }
-        }
-      );
-
-      deleteModal.classList.add("hidden");
-
-      if (!response.ok) {
-        console.error("Delete account error:", await response.text());
-        alert("Failed to delete account.");
+      if (error) {
+        console.error("Delete user error:", error);
+        alert("Could not delete account: " + error.message);
+        finalDeleteBtn.disabled = false;
+        finalDeleteBtn.textContent = "Delete my account";
         return;
       }
 
+      // Sign out locally
       await supabase.auth.signOut();
       currentUser = null;
       updateAuthUI();
 
-      if (goodbyeModal) {
-        goodbyeModal.classList.remove("hidden");
-        setTimeout(() => {
-          goodbyeModal.classList.add("hidden");
-        }, 2500);
-      } else {
-        alert("Goodbye 👋 Your account has been deleted.");
-      }
+      // Hide delete modal, show goodbye modal
+      if (deleteModal) deleteModal.classList.add("hidden");
+      if (goodbyeModal) goodbyeModal.classList.remove("hidden");
+
+      // After 2 seconds, hide goodbye modal and show normal logged-out state
+      setTimeout(() => {
+        if (goodbyeModal) goodbyeModal.classList.add("hidden");
+      }, 2000);
     } catch (err) {
-      console.error("Delete account exception:", err);
-      alert("Unexpected error deleting account.");
+      console.error("Delete user exception:", err);
+      alert("Something went wrong while deleting your account.");
+      finalDeleteBtn.disabled = false;
+      finalDeleteBtn.textContent = "Delete my account";
     }
   });
 }
