@@ -153,7 +153,7 @@ let currentMonthDate = new Date(); // which month is shown in the calendar
 let draggedTaskElement = null;     // for drag & drop / touch
 let lastDeletedTask = null;        // for undo
 let undoTimeoutId = null;
-
+let isRecoveryMode = false;
 // === UNDO HELPERS ===
 function showUndo(task) {
   lastDeletedTask = task;
@@ -882,7 +882,7 @@ function renderTaskItem(task) {
   let touchStartX = null;
   let touchCurrentX = null;
   let isSwiping = false;
-let isRecoveryMode = false;
+
   div.addEventListener(
     "touchstart",
     (e) => {
