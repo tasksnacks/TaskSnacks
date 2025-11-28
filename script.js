@@ -1,5 +1,5 @@
 // === CONFIG ===
-const workerUrl = "https://tasksnacks.hikarufujiart.workers.dev/"; // your Worker URL
+const workerUrl = "https://tasksnacks.hikarufujiart.workers.dev/";
 
 // Supabase config
 const supabaseUrl = "https://fxexewdnbmiybbutcnyv.supabase.co";
@@ -10,7 +10,6 @@ const supabaseKey =
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 // ---- ANALYTICS (PostHog) ----
-// toggle: set to true when you want to start tracking
 const ENABLE_TRACKING = false;
 function track(eventName, props = {}) {
   if (!ENABLE_TRACKING) return;
@@ -24,7 +23,7 @@ function formatDateLocal(d) {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`; // YYYY-MM-DD for <input type="date">
+  return `${year}-${month}-${day}`;
 }
 
 // === Fun facts (local, no API cost) ===
@@ -38,7 +37,7 @@ const funFacts = [
   "Wombats produce cube-shaped poop to mark territory.",
   "Koalas sleep up to 22 hours a day.",
   "A group of flamingos is called a flamboyance.",
-  "Honey never spoils; archaeologists found edible honey in ancient tombs."
+  "Honey never spoils; archaeologists found edible honey in ancient tombs.",
 ];
 
 let lastFunFact = null;
@@ -53,10 +52,10 @@ function getRandomFunFact() {
 }
 
 function showFunFact(fact) {
-  // small text at the bottom
+  if (!funFactContainer) return;
+
   funFactContainer.textContent = `🎉 Fun fact: ${fact}`;
 
-  // BIG popup in the middle
   const popup = document.createElement("div");
   popup.className = "fun-fact-popup";
   popup.innerHTML = `<strong>Fun fact</strong><br>${fact}`;
@@ -66,12 +65,11 @@ function showFunFact(fact) {
     popup.classList.add("visible");
   });
 
-  // confetti burst (if library loaded)
   if (window.confetti) {
     window.confetti({
       particleCount: 80,
       spread: 70,
-      origin: { y: 0.25 }
+      origin: { y: 0.25 },
     });
   }
 
@@ -81,7 +79,7 @@ function showFunFact(fact) {
   }, 2500);
 }
 
-// === DOM refs ===
+// === DOM REFS ===
 const organizeBtn = document.getElementById("organizeBtn");
 const brainDump = document.getElementById("brainDump");
 const tasksContainer = document.getElementById("tasksContainer");
@@ -112,24 +110,38 @@ const appContent = document.getElementById("appContent");
 const loggedOutInfo = document.getElementById("loggedOutInfo");
 const refreshBtn = document.getElementById("refreshBtn");
 
+// Settings & account
 const settingsBtn = document.getElementById("settingsBtn");
 const settingsMenu = document.getElementById("settingsMenu");
 const changePasswordBtn = document.getElementById("changePasswordBtn");
 const deleteAccountBtn = document.getElementById("deleteAccountBtn");
 
+// Password reset section (from email link)
 const passwordResetSection = document.getElementById("passwordResetSection");
 const newPasswordInput = document.getElementById("newPasswordInput");
 const setNewPasswordBtn = document.getElementById("setNewPasswordBtn");
 
-// --- SETTINGS DROPDOWN TOGGLE ---
+// About modal
+const aboutBtn = document.getElementById("aboutBtn");
+const aboutModal = document.getElementById("aboutModal");
+const aboutCloseBtn = document.getElementById("aboutCloseBtn");
+const aboutBackdrop = document.getElementById("aboutBackdrop");
+
+// === STATE ===
+let currentUser = null;
+let currentMonthDate = new Date();
+let draggedTaskElement = null;
+let lastDeletedTask = null;
+let undoTimeoutId = null;
+let isRecoveryMode = false;
+
+// === SETTINGS DROPDOWN TOGGLE ===
 if (settingsBtn && settingsMenu) {
-  // Toggle on click
   settingsBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     settingsMenu.classList.toggle("hidden");
   });
 
-  // Close when clicking outside
   document.addEventListener("click", (e) => {
     if (
       !settingsMenu.classList.contains("hidden") &&
@@ -141,19 +153,6 @@ if (settingsBtn && settingsMenu) {
   });
 }
 
-// About modal refs
-const aboutBtn = document.getElementById("aboutBtn");
-const aboutModal = document.getElementById("aboutModal");
-const aboutCloseBtn = document.getElementById("aboutCloseBtn");
-const aboutBackdrop = document.getElementById("aboutBackdrop");
-
-// === STATE ===
-let currentUser = null;
-let currentMonthDate = new Date(); // which month is shown in the calendar
-let draggedTaskElement = null;     // for drag & drop / touch
-let lastDeletedTask = null;        // for undo
-let undoTimeoutId = null;
-let isRecoveryMode = false;
 // === UNDO HELPERS ===
 function showUndo(task) {
   lastDeletedTask = task;
@@ -185,7 +184,7 @@ function showUndo(task) {
           task_text: lastDeletedTask.task_text,
           priority: lastDeletedTask.priority,
           completed: lastDeletedTask.completed,
-          sort_index: lastDeletedTask.sort_index ?? 0
+          sort_index: lastDeletedTask.sort_index ?? 0,
         })
         .select()
         .single();
@@ -207,12 +206,39 @@ function hideUndoBar() {
   if (undoBar) undoBar.classList.remove("visible");
 }
 
+// === RECOVERY MODE FROM URL ===
+function handleRecoveryFromURL() {
+  const hash = window.location.hash || "";
+  const params = new URLSearchParams(hash.replace(/^#/, ""));
+  const type = params.get("type");
+
+  if (type === "recovery") {
+    isRecoveryMode = true;
+
+    if (passwordResetSection) {
+      passwordResetSection.style.display = "block";
+    }
+    if (authStatus) {
+      authStatus.textContent =
+        "You opened a secure link to reset your password. Please set a new one.";
+    }
+
+    // Optional: make the URL nicer (remove hash)
+    try {
+      history.replaceState(null, "", window.location.pathname);
+    } catch (e) {
+      // ignore if not allowed
+    }
+  }
+}
+
 // === AUTH LOGIC ===
 async function checkSession() {
   const { data } = await supabase.auth.getUser();
   currentUser = data.user || null;
   updateAuthUI();
-  if (currentUser) {
+
+  if (!isRecoveryMode && currentUser) {
     setToday();
     await loadTasksForSelectedDate();
     await renderCalendar();
@@ -223,108 +249,244 @@ function updateAuthUI() {
   const hasCalendar = !!calendarSection;
   const hasSort = !!sortSection;
   const hasManual = !!manualAddSection;
-  const appContent = document.getElementById("appContent");
+
+  // If we're in password recovery mode, show only the reset box
+  if (isRecoveryMode) {
+    if (authStatus) {
+      authStatus.textContent =
+        "Set a new password to finish resetting your account.";
+    }
+
+    if (passwordResetSection) passwordResetSection.style.display = "block";
+    if (appContent) appContent.style.display = "none";
+    if (loggedOutInfo) loggedOutInfo.style.display = "none";
+
+    if (emailInput) emailInput.style.display = "none";
+    if (passwordInput) passwordInput.style.display = "none";
+    if (loginBtn) loginBtn.style.display = "none";
+    if (signupBtn) signupBtn.style.display = "none";
+    if (logoutBtn) logoutBtn.style.display = "none";
+
+    if (hasCalendar) calendarSection.style.display = "none";
+    if (hasSort) sortSection.style.display = "none";
+    if (hasManual) manualAddSection.style.display = "none";
+    if (organizeBtn) organizeBtn.disabled = true;
+
+    if (settingsMenu) settingsMenu.classList.add("hidden");
+    return;
+  }
+
+  // Normal app state (not in recovery mode)
+  if (passwordResetSection) passwordResetSection.style.display = "none";
 
   if (currentUser) {
-    // Show logged-in stuff
-    authStatus.textContent = `Logged in as ${currentUser.email}`;
-    logoutBtn.style.display = "inline-block";
-    loginBtn.style.display = "none";
-    signupBtn.style.display = "none";
+    if (authStatus)
+      authStatus.textContent = `Logged in as ${currentUser.email}`;
+    if (logoutBtn) logoutBtn.style.display = "inline-block";
+    if (loginBtn) loginBtn.style.display = "none";
+    if (signupBtn) signupBtn.style.display = "none";
 
-    // Hide email/password fields themselves if you want:
-    emailInput.style.display = "none";
-    passwordInput.style.display = "none";
+    if (emailInput) emailInput.style.display = "none";
+    if (passwordInput) passwordInput.style.display = "none";
 
     if (loggedOutInfo) loggedOutInfo.style.display = "none";
     if (hasCalendar) calendarSection.style.display = "block";
     if (hasSort) sortSection.style.display = "block";
     if (hasManual) manualAddSection.style.display = "flex";
-    organizeBtn.disabled = false;
+    if (organizeBtn) organizeBtn.disabled = false;
     if (appContent) appContent.style.display = "block";
   } else {
-    // Show logged-out state
-    authStatus.textContent = "Not logged in.";
-    logoutBtn.style.display = "none";
-    loginBtn.style.display = "inline-block";
-    signupBtn.style.display = "inline-block";
+    if (authStatus) authStatus.textContent = "Not logged in.";
+    if (logoutBtn) logoutBtn.style.display = "none";
+    if (loginBtn) loginBtn.style.display = "inline-block";
+    if (signupBtn) signupBtn.style.display = "inline-block";
 
-    // Show inputs again
-    emailInput.style.display = "inline-block";
-    passwordInput.style.display = "inline-block";
+    if (emailInput) emailInput.style.display = "inline-block";
+    if (passwordInput) passwordInput.style.display = "inline-block";
 
     if (loggedOutInfo) loggedOutInfo.style.display = "block";
     if (hasCalendar) calendarSection.style.display = "none";
     if (hasSort) sortSection.style.display = "none";
     if (hasManual) manualAddSection.style.display = "none";
-    organizeBtn.disabled = true;
-    tasksContainer.innerHTML = "";
-    funFactContainer.textContent = "";
+    if (organizeBtn) organizeBtn.disabled = true;
+
+    if (tasksContainer) tasksContainer.innerHTML = "";
+    if (funFactContainer) funFactContainer.textContent = "";
     if (appContent) appContent.style.display = "none";
   }
 
-  // Always hide settings menu on any auth state change
   if (settingsMenu) settingsMenu.classList.add("hidden");
-  if (passwordResetSection) {
-    passwordResetSection.style.display = isRecoveryMode ? "block" : "none";
-  }
 }
 
 // === AUTH BUTTON HANDLERS ===
-signupBtn.addEventListener("click", async () => {
-  const email = emailInput.value.trim();
-  const password = passwordInput.value.trim();
-  if (!email || !password) return alert("Email and password required.");
+if (signupBtn) {
+  signupBtn.addEventListener("click", async () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    if (!email || !password) return alert("Email and password required.");
 
-  try {
-    const { error } = await supabase.auth.signUp({
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: "https://tasksnacks.github.io/TaskSnacks/",
+        },
+      });
+
+      if (error) {
+        console.error("Sign up error object:", error);
+        return alert("Sign up error: " + error.message);
+      }
+
+      track("ts_signup_success");
+      alert("Check your email to confirm your account.");
+    } catch (e) {
+      console.error("Sign up threw exception:", e);
+      alert("Sign up error: " + e.message);
+    }
+  });
+}
+
+if (loginBtn) {
+  loginBtn.addEventListener("click", async () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    if (!email || !password) return alert("Email and password required.");
+
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
-      options: {
-        emailRedirectTo: "https://tasksnacks.github.io/TaskSnacks/"
-      }
     });
+    if (error) return alert("Login error: " + error.message);
 
-    if (error) {
-      console.error("Sign up error object:", error);
-      return alert("Sign up error: " + error.message);
+    currentUser = data.user;
+    isRecoveryMode = false;
+    updateAuthUI();
+    setToday();
+    await loadTasksForSelectedDate();
+    await renderCalendar();
+
+    track("ts_login_success");
+  });
+}
+
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
+    await supabase.auth.signOut();
+    currentUser = null;
+    isRecoveryMode = false;
+    updateAuthUI();
+  });
+}
+
+// === CHANGE PASSWORD (send reset email) ===
+if (changePasswordBtn) {
+  changePasswordBtn.addEventListener("click", async () => {
+    if (!currentUser) {
+      alert("Please log in first.");
+      return;
     }
 
-    track("ts_signup_success");
-    alert("Check your email to confirm your account.");
-  } catch (e) {
-    console.error("Sign up threw exception:", e);
-    alert("Sign up error: " + e.message);
-  }
-});
+    const confirmChange = confirm(
+      "We will send a password reset email to your address. Continue?"
+    );
+    if (!confirmChange) return;
 
-loginBtn.addEventListener("click", async () => {
-  const email = emailInput.value.trim();
-  const password = passwordInput.value.trim();
-  if (!email || !password) return alert("Email and password required.");
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        currentUser.email,
+        {
+          redirectTo: "https://tasksnacks.github.io/TaskSnacks/",
+        }
+      );
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
+      if (error) {
+        console.error("Reset password error:", error);
+        alert("Could not send reset email: " + error.message);
+        return;
+      }
+
+      alert("Password reset email sent. Check your inbox.");
+    } catch (err) {
+      console.error("Reset password exception:", err);
+      alert("Something went wrong.");
+    } finally {
+      if (settingsMenu) settingsMenu.classList.add("hidden");
+    }
   });
-  if (error) return alert("Login error: " + error.message);
+}
 
-  currentUser = data.user;
-  updateAuthUI();
-  setToday();
-  await loadTasksForSelectedDate();
-  await renderCalendar();
+// === DELETE ACCOUNT (placeholder) ===
+if (deleteAccountBtn) {
+  deleteAccountBtn.addEventListener("click", () => {
+    if (!currentUser) {
+      alert("Please log in first.");
+      return;
+    }
 
-  track("ts_login_success");
-});
+    const confirm1 = confirm(
+      "Are you sure you want to delete your account and all your tasks? This cannot be undone."
+    );
+    if (!confirm1) return;
 
-logoutBtn.addEventListener("click", async () => {
-  await supabase.auth.signOut();
-  currentUser = null;
-  updateAuthUI();
-});
+    alert(
+      "Account deletion requires a secure backend function.\nThe button is ready, but the actual deletion is not implemented yet."
+    );
 
-// Refresh button
+    if (settingsMenu) settingsMenu.classList.add("hidden");
+  });
+}
+
+// === PASSWORD RESET FLOW (type=recovery in URL) ===
+if (setNewPasswordBtn) {
+  setNewPasswordBtn.addEventListener("click", async () => {
+    const newPassword = newPasswordInput.value.trim();
+    if (!newPassword) {
+      alert("Please enter a new password.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      alert("Password should be at least 6 characters.");
+      return;
+    }
+
+    try {
+      const { data: userData, error: userError } =
+        await supabase.auth.getUser();
+      if (userError || !userData.user) {
+        alert(
+          "This reset link is not active anymore. Please request a new password reset email."
+        );
+        return;
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        console.error("Update password error:", error);
+        alert("Could not update password: " + error.message);
+        return;
+      }
+
+      alert("Password updated successfully. Please log in with your new password.");
+
+      // Option B: log out and return to normal login form
+      await supabase.auth.signOut();
+      isRecoveryMode = false;
+      currentUser = null;
+      newPasswordInput.value = "";
+      updateAuthUI();
+    } catch (err) {
+      console.error("Update password exception:", err);
+      alert("Something went wrong while updating password.");
+    }
+  });
+}
+
+// === REFRESH BUTTON ===
 if (refreshBtn) {
   refreshBtn.addEventListener("click", () => {
     location.reload();
@@ -335,35 +497,38 @@ if (refreshBtn) {
 function setToday() {
   const today = new Date();
   const todayStr = formatDateLocal(today);
-  taskDateInput.value = todayStr;
+  if (taskDateInput) taskDateInput.value = todayStr;
   currentMonthDate = today;
 }
 
 if (sortMode) {
   sortMode.addEventListener("change", () => {
     if (currentUser) loadTasksForSelectedDate();
-
     track("ts_sort_mode_changed", {
-      mode: sortMode.value
+      mode: sortMode.value,
     });
   });
 }
 
-prevMonthBtn.addEventListener("click", () => {
-  currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
-  renderCalendar();
-});
+if (prevMonthBtn) {
+  prevMonthBtn.addEventListener("click", () => {
+    currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
+    renderCalendar();
+  });
+}
 
-nextMonthBtn.addEventListener("click", () => {
-  currentMonthDate.setMonth(currentMonthDate.getMonth() + 1);
-  renderCalendar();
-});
+if (nextMonthBtn) {
+  nextMonthBtn.addEventListener("click", () => {
+    currentMonthDate.setMonth(currentMonthDate.getMonth() + 1);
+    renderCalendar();
+  });
+}
 
 async function renderCalendar() {
-  if (!currentUser) return;
+  if (!currentUser || !calendarGrid || !calendarMonthLabel) return;
 
   const year = currentMonthDate.getFullYear();
-  const month = currentMonthDate.getMonth(); // 0-11
+  const month = currentMonthDate.getMonth();
 
   calendarMonthLabel.textContent = currentMonthDate.toLocaleDateString(
     undefined,
@@ -418,12 +583,12 @@ async function renderCalendar() {
     if (datesWithTasks.has(dateStr)) {
       cell.classList.add("has-tasks");
     }
-    if (taskDateInput.value === dateStr) {
+    if (taskDateInput && taskDateInput.value === dateStr) {
       cell.classList.add("selected");
     }
 
     cell.addEventListener("click", () => {
-      taskDateInput.value = dateStr;
+      if (taskDateInput) taskDateInput.value = dateStr;
       loadTasksForSelectedDate();
       document.querySelectorAll(".cal-day.selected").forEach((el) =>
         el.classList.remove("selected")
@@ -437,6 +602,8 @@ async function renderCalendar() {
 
 // === LOAD TASKS FOR A DATE ===
 async function loadTasksForSelectedDate() {
+  if (!tasksContainer || !funFactContainer || !taskDateInput) return;
+
   tasksContainer.innerHTML = "";
   funFactContainer.textContent = "";
   hideUndoBar();
@@ -474,10 +641,12 @@ async function loadTasksForSelectedDate() {
 }
 
 // === DRAG & DROP CONTAINER HANDLING ===
-tasksContainer.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  reorderTasksAtY(e.clientY);
-});
+if (tasksContainer) {
+  tasksContainer.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    reorderTasksAtY(e.clientY);
+  });
+}
 
 function getDragAfterElement(container, y) {
   const draggableElements = [
@@ -498,7 +667,7 @@ function getDragAfterElement(container, y) {
 }
 
 function reorderTasksAtY(y) {
-  if (!draggedTaskElement) return;
+  if (!draggedTaskElement || !tasksContainer) return;
   const afterElement = getDragAfterElement(tasksContainer, y);
   if (afterElement == null) {
     tasksContainer.appendChild(draggedTaskElement);
@@ -512,15 +681,12 @@ async function saveTaskOrderToDatabase() {
   const items = [...tasksContainer.querySelectorAll(".task-item")];
   const updates = items.map((item, index) => {
     const id = item.dataset.taskId;
-    return supabase
-      .from("tasks")
-      .update({ sort_index: index })
-      .eq("id", id);
+    return supabase.from("tasks").update({ sort_index: index }).eq("id", id);
   });
   try {
     await Promise.all(updates);
     if (sortMode) {
-      sortMode.value = "created"; // treat as “my order”
+      sortMode.value = "created";
     }
   } catch (e) {
     console.error("Error saving order:", e);
@@ -570,7 +736,7 @@ function showMoveDateDialog(task) {
 
   const dateInput = document.createElement("input");
   dateInput.type = "date";
-  dateInput.value = task.task_date || taskDateInput.value;
+  dateInput.value = task.task_date || (taskDateInput ? taskDateInput.value : "");
   dateInput.style.width = "100%";
   dateInput.style.padding = "6px 8px";
   dateInput.style.borderRadius = "8px";
@@ -653,22 +819,21 @@ function showMoveDateDialog(task) {
 
 // === RENDER TASK ITEM ===
 function renderTaskItem(task) {
+  if (!tasksContainer) return;
+
   const div = document.createElement("div");
   div.className = `task-item ${task.priority || "low"}`;
   div.dataset.taskId = task.id;
 
-  // --- LEFT SIDE: drag handle + checkbox + label ---
   const left = document.createElement("div");
   left.style.display = "flex";
   left.style.alignItems = "center";
   left.style.flex = "1";
 
-  // Drag handle
   const dragHandle = document.createElement("span");
   dragHandle.className = "task-drag-handle";
   dragHandle.textContent = "⋮⋮";
 
-  // Checkbox
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
   checkbox.checked = !!task.completed;
@@ -680,9 +845,7 @@ function renderTaskItem(task) {
 
     if (checkbox.checked) {
       const fact = getRandomFunFact();
-      if (fact) {
-        showFunFact(fact);
-      }
+      if (fact) showFunFact(fact);
     }
 
     track("ts_task_completed_toggle", {
@@ -691,7 +854,6 @@ function renderTaskItem(task) {
     });
   });
 
-  // Label (task text) with rename on double-click
   const label = document.createElement("label");
   label.textContent = task.task_text;
   label.style.marginLeft = "10px";
@@ -755,11 +917,9 @@ function renderTaskItem(task) {
   left.appendChild(checkbox);
   left.appendChild(label);
 
-  // --- RIGHT SIDE: priority, move date, up/down, delete ---
   const controls = document.createElement("div");
   controls.className = "task-controls";
 
-  // Priority select
   const prioritySelect = document.createElement("select");
   prioritySelect.className = "priority-select";
   ["high", "medium", "low"].forEach((p) => {
@@ -784,7 +944,6 @@ function renderTaskItem(task) {
     }
   });
 
-  // Move to another day
   const moveDateBtn = document.createElement("button");
   moveDateBtn.textContent = "📆";
   moveDateBtn.title = "Move to another day";
@@ -793,7 +952,6 @@ function renderTaskItem(task) {
     showMoveDateDialog(task);
   });
 
-  // Move up/down (mouse)
   const upBtn = document.createElement("button");
   upBtn.textContent = "↑";
   upBtn.title = "Move up";
@@ -818,7 +976,6 @@ function renderTaskItem(task) {
     }
   });
 
-  // Delete
   const deleteBtn = document.createElement("button");
   deleteBtn.textContent = "✕";
   deleteBtn.title = "Delete task";
@@ -837,7 +994,7 @@ function renderTaskItem(task) {
   div.appendChild(controls);
   tasksContainer.appendChild(div);
 
-  // --- DESKTOP DRAG via handle ---
+  // Desktop drag
   dragHandle.draggable = true;
   dragHandle.addEventListener("dragstart", () => {
     draggedTaskElement = div;
@@ -849,13 +1006,10 @@ function renderTaskItem(task) {
     await saveTaskOrderToDatabase();
   });
 
-  // --- MOBILE DRAG via handle (touch) ---
+  // Mobile drag
   dragHandle.addEventListener("touchstart", (e) => {
     if (e.touches.length !== 1) return;
-
-    e.preventDefault(); // stop text selection / long-press
-    const touch = e.touches[0];
-
+    e.preventDefault();
     draggedTaskElement = div;
     div.classList.add("dragging");
 
@@ -866,7 +1020,7 @@ function renderTaskItem(task) {
       ev.preventDefault();
     };
 
-    const handleEnd = async (ev) => {
+    const handleEnd = async () => {
       document.removeEventListener("touchmove", handleMove);
       document.removeEventListener("touchend", handleEnd);
       document.removeEventListener("touchcancel", handleEnd);
@@ -881,7 +1035,7 @@ function renderTaskItem(task) {
     document.addEventListener("touchcancel", handleEnd);
   });
 
-  // --- SWIPE-TO-DELETE on the whole card (touch) ---
+  // Swipe-to-delete
   let touchStartX = null;
   let touchCurrentX = null;
   let isSwiping = false;
@@ -937,7 +1091,7 @@ async function addManualTask() {
   if (!date) return alert("Please choose a date.");
 
   const existingItems = [
-    ...tasksContainer.querySelectorAll(".task-item")
+    ...tasksContainer.querySelectorAll(".task-item"),
   ];
   const baseIndex = existingItems.length;
 
@@ -949,7 +1103,7 @@ async function addManualTask() {
       task_text: text,
       priority: "medium",
       completed: false,
-      sort_index: baseIndex
+      sort_index: baseIndex,
     })
     .select()
     .single();
@@ -961,7 +1115,7 @@ async function addManualTask() {
   }
 
   track("ts_task_created", {
-    source: "manual"
+    source: "manual",
   });
 
   renderTaskItem(data);
@@ -970,94 +1124,100 @@ async function addManualTask() {
   await renderCalendar();
 }
 
-manualAddBtn.addEventListener("click", addManualTask);
-manualTaskInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    addManualTask();
-  }
-});
+if (manualAddBtn) {
+  manualAddBtn.addEventListener("click", addManualTask);
+}
+if (manualTaskInput) {
+  manualTaskInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addManualTask();
+    }
+  });
+}
 
 // === ORGANIZE BUTTON (AI + SAVE, append tasks) ===
-organizeBtn.addEventListener("click", async () => {
-  if (!currentUser) return alert("Please log in first.");
-  const dumpText = brainDump.value.trim();
-  if (!dumpText) return alert("Please type something first.");
+if (organizeBtn) {
+  organizeBtn.addEventListener("click", async () => {
+    if (!currentUser) return alert("Please log in first.");
+    const dumpText = brainDump.value.trim();
+    if (!dumpText) return alert("Please type something first.");
 
-  const date = taskDateInput.value;
-  if (!date) return alert("Please choose a date.");
+    const date = taskDateInput.value;
+    if (!date) return alert("Please choose a date.");
 
-  organizeBtn.disabled = true;
-  organizeBtn.textContent = "Organizing…";
-  funFactContainer.textContent = "";
-  hideUndoBar();
+    organizeBtn.disabled = true;
+    organizeBtn.textContent = "Organizing…";
+    if (funFactContainer) funFactContainer.textContent = "";
+    hideUndoBar();
 
-  track("ts_organize_clicked", {
-    text_length: dumpText.length,
-  });
-
-  try {
-    const response = await fetch(workerUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: "tasks", text: dumpText }),
+    track("ts_organize_clicked", {
+      text_length: dumpText.length,
     });
 
-    const data = await response.json();
-    if (!data.ok) throw new Error(data.error || "Unknown error from worker.");
+    try {
+      const response = await fetch(workerUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "tasks", text: dumpText }),
+      });
 
-    const lines = data.tasksText
-      .split("\n")
-      .filter((line) => line.trim().startsWith("-"));
+      const data = await response.json();
+      if (!data.ok) throw new Error(data.error || "Unknown error from worker.");
 
-    const existingItems = [
-      ...tasksContainer.querySelectorAll(".task-item")
-    ];
-    let baseIndex = existingItems.length;
+      const lines = data.tasksText
+        .split("\n")
+        .filter((line) => line.trim().startsWith("-"));
 
-    for (const line of lines) {
-      const trimmed = line.replace(/^-\s*/, "");
-      const match = trimmed.match(/^\[(High|Medium|Low)\]\s*(.+)$/i);
-      if (match) {
-        const priority = match[1].toLowerCase();
-        const text = match[2];
+      const existingItems = [
+        ...tasksContainer.querySelectorAll(".task-item"),
+      ];
+      let baseIndex = existingItems.length;
 
-        const { data: inserted, error } = await supabase
-          .from("tasks")
-          .insert({
-            user_id: currentUser.id,
-            task_date: date,
-            task_text: text,
-            priority,
-            completed: false,
-            sort_index: baseIndex
-          })
-          .select()
-          .single();
+      for (const line of lines) {
+        const trimmed = line.replace(/^-\s*/, "");
+        const match = trimmed.match(/^\[(High|Medium|Low)\]\s*(.+)$/i);
+        if (match) {
+          const priority = match[1].toLowerCase();
+          const text = match[2];
 
-        if (!error && inserted) {
-          track("ts_task_created", {
-            source: "ai",
-            priority: priority
-          });
+          const { data: inserted, error } = await supabase
+            .from("tasks")
+            .insert({
+              user_id: currentUser.id,
+              task_date: date,
+              task_text: text,
+              priority,
+              completed: false,
+              sort_index: baseIndex,
+            })
+            .select()
+            .single();
 
-          renderTaskItem(inserted);
-          baseIndex += 1;
+          if (!error && inserted) {
+            track("ts_task_created", {
+              source: "ai",
+              priority: priority,
+            });
+
+            renderTaskItem(inserted);
+            baseIndex += 1;
+          }
         }
       }
-    }
 
-    await saveTaskOrderToDatabase();
-    await renderCalendar();
-  } catch (err) {
-    console.error(err);
-    alert("Error: " + err.message);
-  } finally {
-    organizeBtn.disabled = false;
-    organizeBtn.textContent = "Organize My Mess";
-    brainDump.value = "";
-  }
-});
+      await saveTaskOrderToDatabase();
+      await renderCalendar();
+    } catch (err) {
+      console.error(err);
+      alert("Error: " + err.message);
+    } finally {
+      organizeBtn.disabled = false;
+      organizeBtn.textContent = "Organize My Mess";
+      brainDump.value = "";
+    }
+  });
+}
 
 // === ABOUT MODAL LOGIC ===
 if (aboutBtn && aboutModal) {
@@ -1065,96 +1225,15 @@ if (aboutBtn && aboutModal) {
     aboutModal.classList.remove("hidden");
   });
 }
-
 if (aboutCloseBtn) {
   aboutCloseBtn.addEventListener("click", () => {
     aboutModal.classList.add("hidden");
   });
 }
-
 if (aboutBackdrop) {
   aboutBackdrop.addEventListener("click", () => {
     aboutModal.classList.add("hidden");
   });
-}
-
-
-// --- CHANGE PASSWORD ---
-if (changePasswordBtn) {
-  changePasswordBtn.addEventListener("click", async () => {
-    if (!currentUser) {
-      alert("Please log in first.");
-      return;
-    }
-
-    const confirmChange = confirm(
-      "We will send a password reset email to your address. Continue?"
-    );
-    if (!confirmChange) return;
-
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        currentUser.email,
-        {
-          redirectTo: "https://tasksnacks.github.io/TaskSnacks/"
-        }
-      );
-
-      if (error) {
-        console.error("Reset password error:", error);
-        alert("Could not send reset email: " + error.message);
-        return;
-      }
-
-      alert("Password reset email sent. Check your inbox.");
-    } catch (err) {
-      console.error("Reset password exception:", err);
-      alert("Something went wrong.");
-    } finally {
-      settingsMenu.classList.add("hidden");
-    }
-  });
-}
-
-// --- DELETE ACCOUNT (placeholder) ---
-if (deleteAccountBtn) {
-  deleteAccountBtn.addEventListener("click", () => {
-    if (!currentUser) {
-      alert("Please log in first.");
-      return;
-    }
-
-    const confirm1 = confirm(
-      "Are you sure you want to delete your account and all your tasks? This cannot be undone."
-    );
-    if (!confirm1) return;
-
-    alert(
-      "Account deletion requires a secure backend function.\nThe button is ready, but the actual deletion is not implemented yet."
-    );
-
-    settingsMenu.classList.add("hidden");
-  });
-}
-
-function handleRecoveryFromURL() {
-  const hash = window.location.hash || "";
-  // Example: #access_token=...&type=recovery&...
-  const params = new URLSearchParams(hash.replace(/^#/, ""));
-
-  const type = params.get("type");
-  if (type === "recovery") {
-    isRecoveryMode = true;
-    if (passwordResetSection) {
-      passwordResetSection.style.display = "block";
-    }
-    if (authStatus) {
-      authStatus.textContent = "You are logged in via a password reset link. Please set a new password.";
-    }
-
-    // Optional: clean the hash from the URL so it looks nicer
-    // history.replaceState(null, "", window.location.pathname);
-  }
 }
 
 // === INIT ===
