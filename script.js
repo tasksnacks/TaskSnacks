@@ -197,7 +197,13 @@ function updateAuthUI() {
 
     if (appContent) appContent.style.display = "block";
   } else {
-    authStatus.textContent = "Not logged in.";
+authStatus.textContent = "Not logged in.";
+
+const loggedOutInfo = document.getElementById("loggedOutInfo");
+if (loggedOutInfo) loggedOutInfo.style.display = "none";
+    
+const loggedOutInfo = document.getElementById("loggedOutInfo");
+if (loggedOutInfo) loggedOutInfo.style.display = "block";
     logoutBtn.style.display = "none";
     loginBtn.style.display = "inline-block";
     signupBtn.style.display = "inline-block";
