@@ -116,7 +116,6 @@ const settingsBtn = document.getElementById("settingsBtn");
 const settingsMenu = document.getElementById("settingsMenu");
 const changePasswordBtn = document.getElementById("changePasswordBtn");
 const deleteAccountBtn = document.getElementById("deleteAccountBtn");
-const loggedOutInfo = document.getElementById("loggedOutInfo");
 
 // --- SETTINGS DROPDOWN TOGGLE ---
 if (settingsBtn && settingsMenu) {
