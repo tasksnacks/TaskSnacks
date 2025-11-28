@@ -112,6 +112,32 @@ const appContent = document.getElementById("appContent");
 const loggedOutInfo = document.getElementById("loggedOutInfo");
 const refreshBtn = document.getElementById("refreshBtn");
 
+const settingsBtn = document.getElementById("settingsBtn");
+const settingsMenu = document.getElementById("settingsMenu");
+const changePasswordBtn = document.getElementById("changePasswordBtn");
+const deleteAccountBtn = document.getElementById("deleteAccountBtn");
+const loggedOutInfo = document.getElementById("loggedOutInfo");
+
+// --- SETTINGS DROPDOWN TOGGLE ---
+if (settingsBtn && settingsMenu) {
+  // Toggle on click
+  settingsBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    settingsMenu.classList.toggle("hidden");
+  });
+
+  // Close when clicking outside
+  document.addEventListener("click", (e) => {
+    if (
+      !settingsMenu.classList.contains("hidden") &&
+      !settingsMenu.contains(e.target) &&
+      e.target !== settingsBtn
+    ) {
+      settingsMenu.classList.add("hidden");
+    }
+  });
+}
+
 // About modal refs
 const aboutBtn = document.getElementById("aboutBtn");
 const aboutModal = document.getElementById("aboutModal");
@@ -194,54 +220,48 @@ function updateAuthUI() {
   const hasCalendar = !!calendarSection;
   const hasSort = !!sortSection;
   const hasManual = !!manualAddSection;
+  const appContent = document.getElementById("appContent");
 
   if (currentUser) {
-    // Logged IN
+    // Show logged-in stuff
     authStatus.textContent = `Logged in as ${currentUser.email}`;
-
-    // Show only Log out button
     logoutBtn.style.display = "inline-block";
     loginBtn.style.display = "none";
     signupBtn.style.display = "none";
 
-    // Hide email/password fields
+    // Hide email/password fields themselves if you want:
     emailInput.style.display = "none";
     passwordInput.style.display = "none";
 
-    // Hide logged-out info
     if (loggedOutInfo) loggedOutInfo.style.display = "none";
-
-    // Show app content
-    if (appContent) appContent.style.display = "block";
-
     if (hasCalendar) calendarSection.style.display = "block";
     if (hasSort) sortSection.style.display = "block";
     if (hasManual) manualAddSection.style.display = "flex";
     organizeBtn.disabled = false;
+    if (appContent) appContent.style.display = "block";
   } else {
-    // Logged OUT
+    // Show logged-out state
     authStatus.textContent = "Not logged in.";
-
-    // Show login/signup and inputs
     logoutBtn.style.display = "none";
     loginBtn.style.display = "inline-block";
     signupBtn.style.display = "inline-block";
+
+    // Show inputs again
     emailInput.style.display = "inline-block";
     passwordInput.style.display = "inline-block";
 
-    // Show logged-out info
     if (loggedOutInfo) loggedOutInfo.style.display = "block";
-
-    // Hide app content
-    if (appContent) appContent.style.display = "none";
-
     if (hasCalendar) calendarSection.style.display = "none";
     if (hasSort) sortSection.style.display = "none";
     if (hasManual) manualAddSection.style.display = "none";
     organizeBtn.disabled = true;
     tasksContainer.innerHTML = "";
     funFactContainer.textContent = "";
+    if (appContent) appContent.style.display = "none";
   }
+
+  // Always hide settings menu on any auth state change
+  if (settingsMenu) settingsMenu.classList.add("hidden");
 }
 
 // === AUTH BUTTON HANDLERS ===
@@ -1049,6 +1069,65 @@ if (aboutCloseBtn) {
 if (aboutBackdrop) {
   aboutBackdrop.addEventListener("click", () => {
     aboutModal.classList.add("hidden");
+  });
+}
+
+
+// --- CHANGE PASSWORD ---
+if (changePasswordBtn) {
+  changePasswordBtn.addEventListener("click", async () => {
+    if (!currentUser) {
+      alert("Please log in first.");
+      return;
+    }
+
+    const confirmChange = confirm(
+      "We will send a password reset email to your address. Continue?"
+    );
+    if (!confirmChange) return;
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        currentUser.email,
+        {
+          redirectTo: "https://tasksnacks.github.io/TaskSnacks/"
+        }
+      );
+
+      if (error) {
+        console.error("Reset password error:", error);
+        alert("Could not send reset email: " + error.message);
+        return;
+      }
+
+      alert("Password reset email sent. Check your inbox.");
+    } catch (err) {
+      console.error("Reset password exception:", err);
+      alert("Something went wrong.");
+    } finally {
+      settingsMenu.classList.add("hidden");
+    }
+  });
+}
+
+// --- DELETE ACCOUNT (placeholder) ---
+if (deleteAccountBtn) {
+  deleteAccountBtn.addEventListener("click", () => {
+    if (!currentUser) {
+      alert("Please log in first.");
+      return;
+    }
+
+    const confirm1 = confirm(
+      "Are you sure you want to delete your account and all your tasks? This cannot be undone."
+    );
+    if (!confirm1) return;
+
+    alert(
+      "Account deletion requires a secure backend function.\nThe button is ready, but the actual deletion is not implemented yet."
+    );
+
+    settingsMenu.classList.add("hidden");
   });
 }
 
