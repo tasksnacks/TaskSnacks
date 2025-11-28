@@ -367,11 +367,13 @@ if (changePasswordBtn) {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(
-        currentUser.email,
-        {
-          redirectTo: "https://tasksnacks.github.io/TaskSnacks/?type=recovery"
-        }
-      );
+  currentUser.email,
+  {
+    // add a special flag so we know this is a *password reset*,
+    // not a normal login or email confirmation
+    redirectTo: "https://tasksnacks.github.io/TaskSnacks/#recovery=1"
+  }
+);
 
       if (error) {
         console.error("Reset password error:", error);
@@ -391,26 +393,35 @@ if (changePasswordBtn) {
 
 // 2. Detect recovery mode from URL
 function handleRecoveryFromURL() {
-  const url = new URL(window.location.href);
+  const hash = window.location.hash || "";
 
-  const typeFromQuery = url.searchParams.get("type");
-  let type = typeFromQuery;
-
-  // also support hash style, just in case
-  if (!type) {
-    const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
-    type = hashParams.get("type");
-  }
-
-  if (type === "recovery") {
+  // Only enter recovery mode if we *explicitly* see our custom flag
+  if (hash.includes("recovery=1")) {
     isRecoveryMode = true;
-    if (passwordResetSection) passwordResetSection.style.display = "block";
+
+    if (passwordResetSection) {
+      passwordResetSection.style.display = "block";
+    }
     if (authStatus) {
       authStatus.textContent =
-        "You arrived from a password reset link. Set a new password below.";
+        "You opened a password reset link. Please set a new password.";
+    }
+
+    // clean up the URL (remove the hash)
+    try {
+      history.replaceState(
+        null,
+        "",
+        window.location.pathname + window.location.search
+      );
+    } catch (e) {
+      // ignore if not allowed
     }
   } else {
     isRecoveryMode = false;
+    if (passwordResetSection) {
+      passwordResetSection.style.display = "none";
+    }
   }
 }
 
