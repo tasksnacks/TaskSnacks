@@ -9,6 +9,11 @@ const supabaseKey =
 // Supabase client
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+// Edge function URL for deleting the current user
+const DELETE_FUNCTION_URL =
+  "https://fxexewdnbmiybbutcnyv.supabase.co/functions/v1/smooth-action";
+// ^^^ if your function slug is actually "smooth-action", change "delete-user" to "smooth-action"
+
 // ---- ANALYTICS (PostHog) ----
 const ENABLE_TRACKING = false;
 function track(eventName, props = {}) {
@@ -1182,27 +1187,70 @@ if (aboutBackdrop) {
 }
 
 // --- DELETE ACCOUNT (real flow using Edge Function) ---
+// --- DELETE ACCOUNT (real implementation) ---
 if (deleteAccountBtn) {
-  deleteAccountBtn.addEventListener("click", () => {
+  deleteAccountBtn.addEventListener("click", async () => {
     if (!currentUser) {
       alert("Please log in first.");
       return;
     }
 
-    // Open the modal
-    if (deleteModal) {
-      deleteModal.classList.remove("hidden");
-    }
-    if (deleteConfirmInput) {
-      deleteConfirmInput.value = "";
-    }
-    if (finalDeleteBtn) {
-      finalDeleteBtn.disabled = true;
+    // Ask the user to type DELETE
+    const typed = prompt(
+      "Type DELETE to permanently delete your TaskSnacks account and all your tasks.\n\nThis cannot be undone."
+    );
+
+    if (typed !== "DELETE") {
+      alert("Account deletion cancelled.");
+      if (settingsMenu) settingsMenu.classList.add("hidden");
+      return;
     }
 
-    // Close settings dropdown
-    if (settingsMenu) {
-      settingsMenu.classList.add("hidden");
+    try {
+      // 1) Get the current session access token
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.getSession();
+
+      if (sessionError || !sessionData.session) {
+        console.error("Session error:", sessionError);
+        alert("Could not get your session. Please log in again and retry.");
+        return;
+      }
+
+      const token = sessionData.session.access_token;
+
+      // 2) Call Edge Function
+      const resp = await fetch(DELETE_FUNCTION_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const body = await resp.json().catch(() => ({}));
+
+      if (!resp.ok) {
+        console.error("delete-user error:", body);
+        alert(body.error || "Something went wrong deleting your account.");
+        return;
+      }
+
+      // 3) Sign the user out locally
+      await supabase.auth.signOut();
+
+      // 4) Friendly goodbye message
+      alert(
+        "Your account and all your tasks have been deleted.\n\nGoodbye for now – hope to see you another time 💚"
+      );
+
+      // 5) Reload to clean state
+      window.location.href = "https://tasksnacks.github.io/TaskSnacks/";
+    } catch (err) {
+      console.error("Unexpected delete error:", err);
+      alert("Unexpected error deleting account. Please try again.");
+    } finally {
+      if (settingsMenu) settingsMenu.classList.add("hidden");
     }
   });
 }
