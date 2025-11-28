@@ -5,7 +5,10 @@ const workerUrl = "https://tasksnacks.hikarufujiart.workers.dev/"; // your Worke
 const supabaseUrl = "https://fxexewdnbmiybbutcnyv.supabase.co";
 const supabaseKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4ZXhld2RuYm1peWJidXRjbnl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1NTA2MjQsImV4cCI6MjA3OTEyNjYyNH0.E_UQHGX4zeLUajwMIlTRchsCMnr99__cDESOHflp8cc";
+
 // ---- ANALYTICS (PostHog) ----
+// === ANALYTICS TOGGLE ===
+const ENABLE_TRACKING = false;
 function track(eventName, props = {}) {
   if (window.posthog && typeof window.posthog.capture === "function") {
     window.posthog.capture(eventName, props);
