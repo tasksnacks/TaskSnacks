@@ -199,5 +199,34 @@
 
   <!-- Your app logic -->
   <script src="script.js"></script>
+
+  <div id="deleteModal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-dialog delete-dialog">
+    <button id="deleteCloseBtn" class="modal-close">&times;</button>
+
+    <h2>Delete your account?</h2>
+    <p>This will permanently erase your account and all your tasks.</p>
+    <p>To confirm, type <strong>DELETE</strong> below.</p>
+
+    <input id="deleteConfirmInput" type="text"
+      placeholder="Type DELETE to confirm"
+      class="delete-input"
+    />
+
+    <button id="finalDeleteBtn" class="danger-delete-btn" disabled>
+      Permanently delete my account
+    </button>
+  </div>
+</div>
+
+<!-- Goodbye popup -->
+<div id="goodbyeModal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-dialog goodbye-dialog">
+    <h2>Goodbye 👋</h2>
+    <p>Your account has been deleted.<br>See you another time.</p>
+  </div>
+</div>
 </body>
 </html>
