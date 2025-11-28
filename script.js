@@ -1151,25 +1151,50 @@ if (changePasswordBtn) {
 
 // --- DELETE ACCOUNT (placeholder) ---
 if (deleteAccountBtn) {
-  deleteAccountBtn.addEventListener("click", () => {
+  deleteAccountBtn.addEventListener("click", async () => {
     if (!currentUser) {
       alert("Please log in first.");
       return;
     }
 
     const confirm1 = confirm(
-      "Are you sure you want to delete your account and all your tasks? This cannot be undone."
+      "Are you sure you want to permanently delete your account and ALL your tasks? This cannot be undone."
     );
     if (!confirm1) return;
 
-    alert(
-      "Account deletion requires a secure backend function.\nThe button is ready, but the actual deletion is not implemented yet."
-    );
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const accessToken = session?.session?.access_token;
 
-    if (settingsMenu) settingsMenu.classList.add("hidden");
+      const response = await fetch(
+        "https://fxexewdnbmiybbutcnyv.supabase.co/functions/v1/delete-user",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          }
+        }
+      );
+
+      if (!response.ok) {
+        const text = await response.text();
+        alert("Error deleting account: " + text);
+        return;
+      }
+
+      alert("Your account has been permanently deleted.");
+      
+      await supabase.auth.signOut();
+      currentUser = null;
+      updateAuthUI();
+
+    } catch (err) {
+      console.error(err);
+      alert("Unexpected error while deleting account.");
+    }
   });
 }
-
 // --- SET NEW PASSWORD (after clicking email link) ---
 if (setNewPasswordBtn && passwordResetSection) {
   setNewPasswordBtn.addEventListener("click", async () => {
