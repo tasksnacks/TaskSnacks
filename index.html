@@ -8,6 +8,16 @@
 </head>
 <body>
   <div class="container">
+    <!-- Top bar: About + Refresh (always visible) -->
+    <div class="top-bar">
+      <button id="aboutBtn" class="about-btn" type="button">
+        About TaskSnacks
+      </button>
+      <button id="refreshBtn" class="cute-refresh" type="button">
+        Refresh
+      </button>
+    </div>
+
     <h1>TaskSnacks</h1>
     <p class="subtitle">
       Dump your messy thoughts. Get clear tasks. Earn a fun fact reward.
@@ -25,16 +35,6 @@
 
     <!-- Everything below is only visible when logged in -->
     <div id="appContent" style="display:none;">
-
-      <!-- Top bar: refresh + about -->
-      <div class="top-bar">
-        <button id="refreshBtn" class="cute-refresh" type="button">
-          Refresh
-        </button>
-        <button id="aboutBtn" class="about-btn" type="button">
-          About TaskSnacks
-        </button>
-      </div>
 
       <!-- Calendar -->
       <div id="calendarSection" class="calendar-section">
@@ -95,7 +95,7 @@
     </div> <!-- /#appContent -->
   </div> <!-- /.container -->
 
-  <!-- About modal -->
+  <!-- About modal (visible whether logged in or not) -->
   <div id="aboutModal" class="modal hidden">
     <div id="aboutBackdrop" class="modal-backdrop"></div>
     <div class="modal-dialog">
