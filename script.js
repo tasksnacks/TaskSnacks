@@ -117,6 +117,10 @@ const settingsMenu = document.getElementById("settingsMenu");
 const changePasswordBtn = document.getElementById("changePasswordBtn");
 const deleteAccountBtn = document.getElementById("deleteAccountBtn");
 
+const passwordResetSection = document.getElementById("passwordResetSection");
+const newPasswordInput = document.getElementById("newPasswordInput");
+const setNewPasswordBtn = document.getElementById("setNewPasswordBtn");
+
 // --- SETTINGS DROPDOWN TOGGLE ---
 if (settingsBtn && settingsMenu) {
   // Toggle on click
@@ -878,7 +882,7 @@ function renderTaskItem(task) {
   let touchStartX = null;
   let touchCurrentX = null;
   let isSwiping = false;
-
+let isRecoveryMode = false;
   div.addEventListener(
     "touchstart",
     (e) => {
