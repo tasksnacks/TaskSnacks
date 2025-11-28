@@ -179,48 +179,34 @@ function updateAuthUI() {
   const hasCalendar = !!calendarSection;
   const hasSort = !!sortSection;
   const hasManual = !!manualAddSection;
+  const appContent = document.getElementById("appContent");
 
   if (currentUser) {
-    // Logged in
     authStatus.textContent = `Logged in as ${currentUser.email}`;
-
-    // Hide email + password + Sign up + Log in
-    emailInput.style.display = "none";
-    passwordInput.style.display = "none";
-    signupBtn.style.display = "none";
-    loginBtn.style.display = "none";
-
-    // Show only logout
     logoutBtn.style.display = "inline-block";
+    loginBtn.style.display = "none";
+    signupBtn.style.display = "none";
 
-    // Show main UI
     if (hasCalendar) calendarSection.style.display = "block";
     if (hasSort) sortSection.style.display = "block";
     if (hasManual) manualAddSection.style.display = "flex";
-
     organizeBtn.disabled = false;
 
+    if (appContent) appContent.style.display = "block";
   } else {
-    // Logged out
     authStatus.textContent = "Not logged in.";
-
-    // Show login/signup UI
-    emailInput.style.display = "inline-block";
-    passwordInput.style.display = "inline-block";
-    signupBtn.style.display = "inline-block";
-    loginBtn.style.display = "inline-block";
-
-    // Hide logout
     logoutBtn.style.display = "none";
+    loginBtn.style.display = "inline-block";
+    signupBtn.style.display = "inline-block";
 
-    // Hide rest of UI
     if (hasCalendar) calendarSection.style.display = "none";
     if (hasSort) sortSection.style.display = "none";
     if (hasManual) manualAddSection.style.display = "none";
-
     organizeBtn.disabled = true;
     tasksContainer.innerHTML = "";
     funFactContainer.textContent = "";
+
+    if (appContent) appContent.style.display = "none";
   }
 }
 
