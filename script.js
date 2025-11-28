@@ -265,6 +265,9 @@ function updateAuthUI() {
 
   // Always hide settings menu on any auth state change
   if (settingsMenu) settingsMenu.classList.add("hidden");
+  if (passwordResetSection) {
+    passwordResetSection.style.display = isRecoveryMode ? "block" : "none";
+  }
 }
 
 // === AUTH BUTTON HANDLERS ===
@@ -1134,6 +1137,27 @@ if (deleteAccountBtn) {
   });
 }
 
+function handleRecoveryFromURL() {
+  const hash = window.location.hash || "";
+  // Example: #access_token=...&type=recovery&...
+  const params = new URLSearchParams(hash.replace(/^#/, ""));
+
+  const type = params.get("type");
+  if (type === "recovery") {
+    isRecoveryMode = true;
+    if (passwordResetSection) {
+      passwordResetSection.style.display = "block";
+    }
+    if (authStatus) {
+      authStatus.textContent = "You are logged in via a password reset link. Please set a new password.";
+    }
+
+    // Optional: clean the hash from the URL so it looks nicer
+    // history.replaceState(null, "", window.location.pathname);
+  }
+}
+
 // === INIT ===
+handleRecoveryFromURL();
 checkSession();
 track("ts_page_loaded");
