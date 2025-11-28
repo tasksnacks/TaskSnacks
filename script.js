@@ -18,7 +18,7 @@ function track(eventName, props = {}) {
   }
 }
 
-// --- Date helper (LOCAL date, fixes 1-day ahead bug) ---
+// --- Date helper (LOCAL date) ---
 function formatDateLocal(d) {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -37,7 +37,7 @@ const funFacts = [
   "Wombats produce cube-shaped poop to mark territory.",
   "Koalas sleep up to 22 hours a day.",
   "A group of flamingos is called a flamboyance.",
-  "Honey never spoils; archaeologists found edible honey in ancient tombs.",
+  "Honey never spoils; archaeologists found edible honey in ancient tombs."
 ];
 
 let lastFunFact = null;
@@ -52,8 +52,6 @@ function getRandomFunFact() {
 }
 
 function showFunFact(fact) {
-  if (!funFactContainer) return;
-
   funFactContainer.textContent = `🎉 Fun fact: ${fact}`;
 
   const popup = document.createElement("div");
@@ -69,7 +67,7 @@ function showFunFact(fact) {
     window.confetti({
       particleCount: 80,
       spread: 70,
-      origin: { y: 0.25 },
+      origin: { y: 0.25 }
     });
   }
 
@@ -79,7 +77,7 @@ function showFunFact(fact) {
   }, 2500);
 }
 
-// === DOM REFS ===
+// === DOM refs ===
 const organizeBtn = document.getElementById("organizeBtn");
 const brainDump = document.getElementById("brainDump");
 const tasksContainer = document.getElementById("tasksContainer");
@@ -110,18 +108,16 @@ const appContent = document.getElementById("appContent");
 const loggedOutInfo = document.getElementById("loggedOutInfo");
 const refreshBtn = document.getElementById("refreshBtn");
 
-// Settings & account
 const settingsBtn = document.getElementById("settingsBtn");
 const settingsMenu = document.getElementById("settingsMenu");
 const changePasswordBtn = document.getElementById("changePasswordBtn");
 const deleteAccountBtn = document.getElementById("deleteAccountBtn");
 
-// Password reset section (from email link)
 const passwordResetSection = document.getElementById("passwordResetSection");
 const newPasswordInput = document.getElementById("newPasswordInput");
 const setNewPasswordBtn = document.getElementById("setNewPasswordBtn");
 
-// About modal
+// About modal refs
 const aboutBtn = document.getElementById("aboutBtn");
 const aboutModal = document.getElementById("aboutModal");
 const aboutCloseBtn = document.getElementById("aboutCloseBtn");
@@ -150,6 +146,23 @@ if (settingsBtn && settingsMenu) {
     ) {
       settingsMenu.classList.add("hidden");
     }
+  });
+}
+
+// === ABOUT MODAL ===
+if (aboutBtn && aboutModal) {
+  aboutBtn.addEventListener("click", () => {
+    aboutModal.classList.remove("hidden");
+  });
+}
+if (aboutCloseBtn) {
+  aboutCloseBtn.addEventListener("click", () => {
+    aboutModal.classList.add("hidden");
+  });
+}
+if (aboutBackdrop) {
+  aboutBackdrop.addEventListener("click", () => {
+    aboutModal.classList.add("hidden");
   });
 }
 
@@ -184,7 +197,7 @@ function showUndo(task) {
           task_text: lastDeletedTask.task_text,
           priority: lastDeletedTask.priority,
           completed: lastDeletedTask.completed,
-          sort_index: lastDeletedTask.sort_index ?? 0,
+          sort_index: lastDeletedTask.sort_index ?? 0
         })
         .select()
         .single();
@@ -206,39 +219,35 @@ function hideUndoBar() {
   if (undoBar) undoBar.classList.remove("visible");
 }
 
-// === RECOVERY MODE FROM URL ===
-function handleRecoveryFromURL() {
-  const hash = window.location.hash || "";
-  const params = new URLSearchParams(hash.replace(/^#/, ""));
-  const type = params.get("type");
-
-  if (type === "recovery") {
+// === PASSWORD RECOVERY LISTENER (Supabase-recommended) ===
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log("Auth event:", event);
+  if (event === "PASSWORD_RECOVERY") {
+    // User came from the email reset link
     isRecoveryMode = true;
+    currentUser = session?.user ?? null;
 
     if (passwordResetSection) {
       passwordResetSection.style.display = "block";
     }
     if (authStatus) {
-      authStatus.textContent =
-        "You opened a secure link to reset your password. Please set a new one.";
+      authStatus.textContent = "Set a new password for your TaskSnacks account.";
     }
 
-    // Optional: make the URL nicer (remove hash)
-    try {
-      history.replaceState(null, "", window.location.pathname);
-    } catch (e) {
-      // ignore if not allowed
-    }
+    updateAuthUI();
   }
-}
+});
 
 // === AUTH LOGIC ===
 async function checkSession() {
-  const { data } = await supabase.auth.getUser();
-  currentUser = data.user || null;
+  const { data, error } = await supabase.auth.getUser();
+  if (error) {
+    console.error("getUser error:", error);
+  }
+  currentUser = data?.user || null;
   updateAuthUI();
 
-  if (!isRecoveryMode && currentUser) {
+  if (currentUser && !isRecoveryMode) {
     setToday();
     await loadTasksForSelectedDate();
     await renderCalendar();
@@ -250,68 +259,69 @@ function updateAuthUI() {
   const hasSort = !!sortSection;
   const hasManual = !!manualAddSection;
 
-  // If we're in password recovery mode, show only the reset box
+  // 1) Recovery mode UI: show only reset box
   if (isRecoveryMode) {
+    if (passwordResetSection) passwordResetSection.style.display = "block";
+
     if (authStatus) {
       authStatus.textContent =
-        "Set a new password to finish resetting your account.";
+        "Set a new password for your TaskSnacks account.";
     }
 
-    if (passwordResetSection) passwordResetSection.style.display = "block";
+    // Hide main app + marketing while in recovery
     if (appContent) appContent.style.display = "none";
     if (loggedOutInfo) loggedOutInfo.style.display = "none";
-
-    if (emailInput) emailInput.style.display = "none";
-    if (passwordInput) passwordInput.style.display = "none";
-    if (loginBtn) loginBtn.style.display = "none";
-    if (signupBtn) signupBtn.style.display = "none";
-    if (logoutBtn) logoutBtn.style.display = "none";
-
     if (hasCalendar) calendarSection.style.display = "none";
     if (hasSort) sortSection.style.display = "none";
     if (hasManual) manualAddSection.style.display = "none";
     if (organizeBtn) organizeBtn.disabled = true;
+
+    // For safety, hide auth controls (they're not needed here)
+    if (logoutBtn) logoutBtn.style.display = "none";
+    if (loginBtn) loginBtn.style.display = "none";
+    if (signupBtn) signupBtn.style.display = "none";
+    if (emailInput) emailInput.style.display = "none";
+    if (passwordInput) passwordInput.style.display = "none";
 
     if (settingsMenu) settingsMenu.classList.add("hidden");
     return;
   }
 
-  // Normal app state (not in recovery mode)
-  if (passwordResetSection) passwordResetSection.style.display = "none";
-
+  // 2) Normal logged-in / logged-out UI
   if (currentUser) {
-    if (authStatus)
-      authStatus.textContent = `Logged in as ${currentUser.email}`;
-    if (logoutBtn) logoutBtn.style.display = "inline-block";
-    if (loginBtn) loginBtn.style.display = "none";
-    if (signupBtn) signupBtn.style.display = "none";
+    authStatus.textContent = `Logged in as ${currentUser.email}`;
+    logoutBtn.style.display = "inline-block";
+    loginBtn.style.display = "none";
+    signupBtn.style.display = "none";
 
-    if (emailInput) emailInput.style.display = "none";
-    if (passwordInput) passwordInput.style.display = "none";
+    // Hide email/password inputs when logged in
+    emailInput.style.display = "none";
+    passwordInput.style.display = "none";
 
+    if (passwordResetSection) passwordResetSection.style.display = "none";
     if (loggedOutInfo) loggedOutInfo.style.display = "none";
     if (hasCalendar) calendarSection.style.display = "block";
     if (hasSort) sortSection.style.display = "block";
     if (hasManual) manualAddSection.style.display = "flex";
-    if (organizeBtn) organizeBtn.disabled = false;
+    organizeBtn.disabled = false;
     if (appContent) appContent.style.display = "block";
   } else {
-    if (authStatus) authStatus.textContent = "Not logged in.";
-    if (logoutBtn) logoutBtn.style.display = "none";
-    if (loginBtn) loginBtn.style.display = "inline-block";
-    if (signupBtn) signupBtn.style.display = "inline-block";
+    authStatus.textContent = "Not logged in.";
+    logoutBtn.style.display = "none";
+    loginBtn.style.display = "inline-block";
+    signupBtn.style.display = "inline-block";
 
-    if (emailInput) emailInput.style.display = "inline-block";
-    if (passwordInput) passwordInput.style.display = "inline-block";
+    emailInput.style.display = "inline-block";
+    passwordInput.style.display = "inline-block";
 
+    if (passwordResetSection) passwordResetSection.style.display = "none";
     if (loggedOutInfo) loggedOutInfo.style.display = "block";
     if (hasCalendar) calendarSection.style.display = "none";
     if (hasSort) sortSection.style.display = "none";
     if (hasManual) manualAddSection.style.display = "none";
-    if (organizeBtn) organizeBtn.disabled = true;
-
-    if (tasksContainer) tasksContainer.innerHTML = "";
-    if (funFactContainer) funFactContainer.textContent = "";
+    organizeBtn.disabled = true;
+    tasksContainer.innerHTML = "";
+    funFactContainer.textContent = "";
     if (appContent) appContent.style.display = "none";
   }
 
@@ -319,174 +329,62 @@ function updateAuthUI() {
 }
 
 // === AUTH BUTTON HANDLERS ===
-if (signupBtn) {
-  signupBtn.addEventListener("click", async () => {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-    if (!email || !password) return alert("Email and password required.");
+signupBtn.addEventListener("click", async () => {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
+  if (!email || !password) return alert("Email and password required.");
 
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: "https://tasksnacks.github.io/TaskSnacks/",
-        },
-      });
-
-      if (error) {
-        console.error("Sign up error object:", error);
-        return alert("Sign up error: " + error.message);
-      }
-
-      track("ts_signup_success");
-      alert("Check your email to confirm your account.");
-    } catch (e) {
-      console.error("Sign up threw exception:", e);
-      alert("Sign up error: " + e.message);
-    }
-  });
-}
-
-if (loginBtn) {
-  loginBtn.addEventListener("click", async () => {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-    if (!email || !password) return alert("Email and password required.");
-
-    const { data, error } = await supabase.auth.signInWithPassword({
+  try {
+    const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: "https://tasksnacks.github.io/TaskSnacks/"
+      }
     });
-    if (error) return alert("Login error: " + error.message);
 
-    currentUser = data.user;
-    isRecoveryMode = false;
-    updateAuthUI();
-    setToday();
-    await loadTasksForSelectedDate();
-    await renderCalendar();
+    if (error) {
+      console.error("Sign up error object:", error);
+      return alert("Sign up error: " + error.message);
+    }
 
-    track("ts_login_success");
+    track("ts_signup_success");
+    alert("Check your email to confirm your account.");
+  } catch (e) {
+    console.error("Sign up threw exception:", e);
+    alert("Sign up error: " + e.message);
+  }
+});
+
+loginBtn.addEventListener("click", async () => {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
+  if (!email || !password) return alert("Email and password required.");
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
   });
-}
+  if (error) return alert("Login error: " + error.message);
 
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", async () => {
-    await supabase.auth.signOut();
-    currentUser = null;
-    isRecoveryMode = false;
-    updateAuthUI();
-  });
-}
+  currentUser = data.user;
+  isRecoveryMode = false;
+  updateAuthUI();
+  setToday();
+  await loadTasksForSelectedDate();
+  await renderCalendar();
 
-// === CHANGE PASSWORD (send reset email) ===
-if (changePasswordBtn) {
-  changePasswordBtn.addEventListener("click", async () => {
-    if (!currentUser) {
-      alert("Please log in first.");
-      return;
-    }
+  track("ts_login_success");
+});
 
-    const confirmChange = confirm(
-      "We will send a password reset email to your address. Continue?"
-    );
-    if (!confirmChange) return;
+logoutBtn.addEventListener("click", async () => {
+  await supabase.auth.signOut();
+  currentUser = null;
+  isRecoveryMode = false;
+  updateAuthUI();
+});
 
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        currentUser.email,
-        {
-          redirectTo: "https://tasksnacks.github.io/TaskSnacks/",
-        }
-      );
-
-      if (error) {
-        console.error("Reset password error:", error);
-        alert("Could not send reset email: " + error.message);
-        return;
-      }
-
-      alert("Password reset email sent. Check your inbox.");
-    } catch (err) {
-      console.error("Reset password exception:", err);
-      alert("Something went wrong.");
-    } finally {
-      if (settingsMenu) settingsMenu.classList.add("hidden");
-    }
-  });
-}
-
-// === DELETE ACCOUNT (placeholder) ===
-if (deleteAccountBtn) {
-  deleteAccountBtn.addEventListener("click", () => {
-    if (!currentUser) {
-      alert("Please log in first.");
-      return;
-    }
-
-    const confirm1 = confirm(
-      "Are you sure you want to delete your account and all your tasks? This cannot be undone."
-    );
-    if (!confirm1) return;
-
-    alert(
-      "Account deletion requires a secure backend function.\nThe button is ready, but the actual deletion is not implemented yet."
-    );
-
-    if (settingsMenu) settingsMenu.classList.add("hidden");
-  });
-}
-
-// === PASSWORD RESET FLOW (type=recovery in URL) ===
-if (setNewPasswordBtn) {
-  setNewPasswordBtn.addEventListener("click", async () => {
-    const newPassword = newPasswordInput.value.trim();
-    if (!newPassword) {
-      alert("Please enter a new password.");
-      return;
-    }
-    if (newPassword.length < 6) {
-      alert("Password should be at least 6 characters.");
-      return;
-    }
-
-    try {
-      const { data: userData, error: userError } =
-        await supabase.auth.getUser();
-      if (userError || !userData.user) {
-        alert(
-          "This reset link is not active anymore. Please request a new password reset email."
-        );
-        return;
-      }
-
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-
-      if (error) {
-        console.error("Update password error:", error);
-        alert("Could not update password: " + error.message);
-        return;
-      }
-
-      alert("Password updated successfully. Please log in with your new password.");
-
-      // Option B: log out and return to normal login form
-      await supabase.auth.signOut();
-      isRecoveryMode = false;
-      currentUser = null;
-      newPasswordInput.value = "";
-      updateAuthUI();
-    } catch (err) {
-      console.error("Update password exception:", err);
-      alert("Something went wrong while updating password.");
-    }
-  });
-}
-
-// === REFRESH BUTTON ===
+// Refresh button
 if (refreshBtn) {
   refreshBtn.addEventListener("click", () => {
     location.reload();
@@ -497,35 +395,32 @@ if (refreshBtn) {
 function setToday() {
   const today = new Date();
   const todayStr = formatDateLocal(today);
-  if (taskDateInput) taskDateInput.value = todayStr;
+  taskDateInput.value = todayStr;
   currentMonthDate = today;
 }
 
 if (sortMode) {
   sortMode.addEventListener("change", () => {
     if (currentUser) loadTasksForSelectedDate();
+
     track("ts_sort_mode_changed", {
-      mode: sortMode.value,
+      mode: sortMode.value
     });
   });
 }
 
-if (prevMonthBtn) {
-  prevMonthBtn.addEventListener("click", () => {
-    currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
-    renderCalendar();
-  });
-}
+prevMonthBtn.addEventListener("click", () => {
+  currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
+  renderCalendar();
+});
 
-if (nextMonthBtn) {
-  nextMonthBtn.addEventListener("click", () => {
-    currentMonthDate.setMonth(currentMonthDate.getMonth() + 1);
-    renderCalendar();
-  });
-}
+nextMonthBtn.addEventListener("click", () => {
+  currentMonthDate.setMonth(currentMonthDate.getMonth() + 1);
+  renderCalendar();
+});
 
 async function renderCalendar() {
-  if (!currentUser || !calendarGrid || !calendarMonthLabel) return;
+  if (!currentUser) return;
 
   const year = currentMonthDate.getFullYear();
   const month = currentMonthDate.getMonth();
@@ -583,16 +478,16 @@ async function renderCalendar() {
     if (datesWithTasks.has(dateStr)) {
       cell.classList.add("has-tasks");
     }
-    if (taskDateInput && taskDateInput.value === dateStr) {
+    if (taskDateInput.value === dateStr) {
       cell.classList.add("selected");
     }
 
     cell.addEventListener("click", () => {
-      if (taskDateInput) taskDateInput.value = dateStr;
+      taskDateInput.value = dateStr;
       loadTasksForSelectedDate();
-      document.querySelectorAll(".cal-day.selected").forEach((el) =>
-        el.classList.remove("selected")
-      );
+      document
+        .querySelectorAll(".cal-day.selected")
+        .forEach((el) => el.classList.remove("selected"));
       cell.classList.add("selected");
     });
 
@@ -602,8 +497,6 @@ async function renderCalendar() {
 
 // === LOAD TASKS FOR A DATE ===
 async function loadTasksForSelectedDate() {
-  if (!tasksContainer || !funFactContainer || !taskDateInput) return;
-
   tasksContainer.innerHTML = "";
   funFactContainer.textContent = "";
   hideUndoBar();
@@ -641,16 +534,14 @@ async function loadTasksForSelectedDate() {
 }
 
 // === DRAG & DROP CONTAINER HANDLING ===
-if (tasksContainer) {
-  tasksContainer.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    reorderTasksAtY(e.clientY);
-  });
-}
+tasksContainer.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  reorderTasksAtY(e.clientY);
+});
 
 function getDragAfterElement(container, y) {
   const draggableElements = [
-    ...container.querySelectorAll(".task-item:not(.dragging)"),
+    ...container.querySelectorAll(".task-item:not(.dragging)")
   ];
 
   let closest = { offset: Number.NEGATIVE_INFINITY, element: null };
@@ -667,7 +558,7 @@ function getDragAfterElement(container, y) {
 }
 
 function reorderTasksAtY(y) {
-  if (!draggedTaskElement || !tasksContainer) return;
+  if (!draggedTaskElement) return;
   const afterElement = getDragAfterElement(tasksContainer, y);
   if (afterElement == null) {
     tasksContainer.appendChild(draggedTaskElement);
@@ -681,12 +572,15 @@ async function saveTaskOrderToDatabase() {
   const items = [...tasksContainer.querySelectorAll(".task-item")];
   const updates = items.map((item, index) => {
     const id = item.dataset.taskId;
-    return supabase.from("tasks").update({ sort_index: index }).eq("id", id);
+    return supabase
+      .from("tasks")
+      .update({ sort_index: index })
+      .eq("id", id);
   });
   try {
     await Promise.all(updates);
     if (sortMode) {
-      sortMode.value = "created";
+      sortMode.value = "created"; // treat as “my order”
     }
   } catch (e) {
     console.error("Error saving order:", e);
@@ -707,7 +601,7 @@ async function handleDelete(task, div) {
   }, 150);
 }
 
-// === Move task to another date: simple inline dialog ===
+// === Move task to another date ===
 function showMoveDateDialog(task) {
   if (!currentUser) return;
 
@@ -736,7 +630,7 @@ function showMoveDateDialog(task) {
 
   const dateInput = document.createElement("input");
   dateInput.type = "date";
-  dateInput.value = task.task_date || (taskDateInput ? taskDateInput.value : "");
+  dateInput.value = task.task_date || taskDateInput.value;
   dateInput.style.width = "100%";
   dateInput.style.padding = "6px 8px";
   dateInput.style.borderRadius = "8px";
@@ -793,7 +687,7 @@ function showMoveDateDialog(task) {
 
       track("ts_task_moved_day", {
         from: task.task_date,
-        to: newDate,
+        to: newDate
       });
 
       await loadTasksForSelectedDate();
@@ -819,8 +713,6 @@ function showMoveDateDialog(task) {
 
 // === RENDER TASK ITEM ===
 function renderTaskItem(task) {
-  if (!tasksContainer) return;
-
   const div = document.createElement("div");
   div.className = `task-item ${task.priority || "low"}`;
   div.dataset.taskId = task.id;
@@ -845,12 +737,14 @@ function renderTaskItem(task) {
 
     if (checkbox.checked) {
       const fact = getRandomFunFact();
-      if (fact) showFunFact(fact);
+      if (fact) {
+        showFunFact(fact);
+      }
     }
 
     track("ts_task_completed_toggle", {
       completed: checkbox.checked,
-      priority: task.priority,
+      priority: task.priority
     });
   });
 
@@ -1006,10 +900,13 @@ function renderTaskItem(task) {
     await saveTaskOrderToDatabase();
   });
 
-  // Mobile drag
+  // Mobile drag via touch
   dragHandle.addEventListener("touchstart", (e) => {
     if (e.touches.length !== 1) return;
+
     e.preventDefault();
+    const touch = e.touches[0];
+
     draggedTaskElement = div;
     div.classList.add("dragging");
 
@@ -1091,7 +988,7 @@ async function addManualTask() {
   if (!date) return alert("Please choose a date.");
 
   const existingItems = [
-    ...tasksContainer.querySelectorAll(".task-item"),
+    ...tasksContainer.querySelectorAll(".task-item")
   ];
   const baseIndex = existingItems.length;
 
@@ -1103,7 +1000,7 @@ async function addManualTask() {
       task_text: text,
       priority: "medium",
       completed: false,
-      sort_index: baseIndex,
+      sort_index: baseIndex
     })
     .select()
     .single();
@@ -1115,7 +1012,7 @@ async function addManualTask() {
   }
 
   track("ts_task_created", {
-    source: "manual",
+    source: "manual"
   });
 
   renderTaskItem(data);
@@ -1124,119 +1021,204 @@ async function addManualTask() {
   await renderCalendar();
 }
 
-if (manualAddBtn) {
-  manualAddBtn.addEventListener("click", addManualTask);
-}
-if (manualTaskInput) {
-  manualTaskInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addManualTask();
-    }
+manualAddBtn.addEventListener("click", addManualTask);
+manualTaskInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addManualTask();
+  }
+});
+
+// === ORGANIZE BUTTON (AI + SAVE) ===
+organizeBtn.addEventListener("click", async () => {
+  if (!currentUser) return alert("Please log in first.");
+  const dumpText = brainDump.value.trim();
+  if (!dumpText) return alert("Please type something first.");
+
+  const date = taskDateInput.value;
+  if (!date) return alert("Please choose a date.");
+
+  organizeBtn.disabled = true;
+  organizeBtn.textContent = "Organizing…";
+  funFactContainer.textContent = "";
+  hideUndoBar();
+
+  track("ts_organize_clicked", {
+    text_length: dumpText.length
   });
-}
 
-// === ORGANIZE BUTTON (AI + SAVE, append tasks) ===
-if (organizeBtn) {
-  organizeBtn.addEventListener("click", async () => {
-    if (!currentUser) return alert("Please log in first.");
-    const dumpText = brainDump.value.trim();
-    if (!dumpText) return alert("Please type something first.");
-
-    const date = taskDateInput.value;
-    if (!date) return alert("Please choose a date.");
-
-    organizeBtn.disabled = true;
-    organizeBtn.textContent = "Organizing…";
-    if (funFactContainer) funFactContainer.textContent = "";
-    hideUndoBar();
-
-    track("ts_organize_clicked", {
-      text_length: dumpText.length,
+  try {
+    const response = await fetch(workerUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "tasks", text: dumpText })
     });
 
-    try {
-      const response = await fetch(workerUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "tasks", text: dumpText }),
-      });
+    const data = await response.json();
+    if (!data.ok) throw new Error(data.error || "Unknown error from worker.");
 
-      const data = await response.json();
-      if (!data.ok) throw new Error(data.error || "Unknown error from worker.");
+    const lines = data.tasksText
+      .split("\n")
+      .filter((line) => line.trim().startsWith("-"));
 
-      const lines = data.tasksText
-        .split("\n")
-        .filter((line) => line.trim().startsWith("-"));
+    const existingItems = [
+      ...tasksContainer.querySelectorAll(".task-item")
+    ];
+    let baseIndex = existingItems.length;
 
-      const existingItems = [
-        ...tasksContainer.querySelectorAll(".task-item"),
-      ];
-      let baseIndex = existingItems.length;
+    for (const line of lines) {
+      const trimmed = line.replace(/^-\s*/, "");
+      const match = trimmed.match(/^\[(High|Medium|Low)\]\s*(.+)$/i);
+      if (match) {
+        const priority = match[1].toLowerCase();
+        const text = match[2];
 
-      for (const line of lines) {
-        const trimmed = line.replace(/^-\s*/, "");
-        const match = trimmed.match(/^\[(High|Medium|Low)\]\s*(.+)$/i);
-        if (match) {
-          const priority = match[1].toLowerCase();
-          const text = match[2];
+        const { data: inserted, error } = await supabase
+          .from("tasks")
+          .insert({
+            user_id: currentUser.id,
+            task_date: date,
+            task_text: text,
+            priority,
+            completed: false,
+            sort_index: baseIndex
+          })
+          .select()
+          .single();
 
-          const { data: inserted, error } = await supabase
-            .from("tasks")
-            .insert({
-              user_id: currentUser.id,
-              task_date: date,
-              task_text: text,
-              priority,
-              completed: false,
-              sort_index: baseIndex,
-            })
-            .select()
-            .single();
+        if (!error && inserted) {
+          track("ts_task_created", {
+            source: "ai",
+            priority: priority
+          });
 
-          if (!error && inserted) {
-            track("ts_task_created", {
-              source: "ai",
-              priority: priority,
-            });
-
-            renderTaskItem(inserted);
-            baseIndex += 1;
-          }
+          renderTaskItem(inserted);
+          baseIndex += 1;
         }
       }
+    }
 
-      await saveTaskOrderToDatabase();
-      await renderCalendar();
+    await saveTaskOrderToDatabase();
+    await renderCalendar();
+  } catch (err) {
+    console.error(err);
+    alert("Error: " + err.message);
+  } finally {
+    organizeBtn.disabled = false;
+    organizeBtn.textContent = "Organize My Mess";
+    brainDump.value = "";
+  }
+});
+
+// --- CHANGE PASSWORD (send reset email) ---
+if (changePasswordBtn) {
+  changePasswordBtn.addEventListener("click", async () => {
+    if (!currentUser) {
+      alert("Please log in first.");
+      return;
+    }
+
+    const confirmChange = confirm(
+      `We will send a password reset email to ${currentUser.email}. Continue?`
+    );
+    if (!confirmChange) return;
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        currentUser.email,
+        {
+          redirectTo: "https://tasksnacks.github.io/TaskSnacks/"
+        }
+      );
+
+      if (error) {
+        console.error("Reset password error:", error);
+        alert("Could not send reset email: " + error.message);
+        return;
+      }
+
+      alert(
+        "Password reset email sent. Please click the link in the latest email you receive."
+      );
     } catch (err) {
-      console.error(err);
-      alert("Error: " + err.message);
+      console.error("Reset password exception:", err);
+      alert("Something went wrong.");
     } finally {
-      organizeBtn.disabled = false;
-      organizeBtn.textContent = "Organize My Mess";
-      brainDump.value = "";
+      if (settingsMenu) settingsMenu.classList.add("hidden");
     }
   });
 }
 
-// === ABOUT MODAL LOGIC ===
-if (aboutBtn && aboutModal) {
-  aboutBtn.addEventListener("click", () => {
-    aboutModal.classList.remove("hidden");
+// --- DELETE ACCOUNT (placeholder) ---
+if (deleteAccountBtn) {
+  deleteAccountBtn.addEventListener("click", () => {
+    if (!currentUser) {
+      alert("Please log in first.");
+      return;
+    }
+
+    const confirm1 = confirm(
+      "Are you sure you want to delete your account and all your tasks? This cannot be undone."
+    );
+    if (!confirm1) return;
+
+    alert(
+      "Account deletion requires a secure backend function.\nThe button is ready, but the actual deletion is not implemented yet."
+    );
+
+    if (settingsMenu) settingsMenu.classList.add("hidden");
   });
 }
-if (aboutCloseBtn) {
-  aboutCloseBtn.addEventListener("click", () => {
-    aboutModal.classList.add("hidden");
-  });
-}
-if (aboutBackdrop) {
-  aboutBackdrop.addEventListener("click", () => {
-    aboutModal.classList.add("hidden");
+
+// --- SET NEW PASSWORD (after clicking email link) ---
+if (setNewPasswordBtn && passwordResetSection) {
+  setNewPasswordBtn.addEventListener("click", async () => {
+    const newPassword = newPasswordInput.value.trim();
+    if (!newPassword) {
+      alert("Please enter a new password.");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        console.error("updateUser error:", error);
+        alert(
+          "Could not update password: " +
+            error.message +
+            "\n\nIf this link came from an older email, request a new reset email from TaskSnacks."
+        );
+        return;
+      }
+
+      alert(
+        "Password updated successfully! For security, you'll need to log in again with your new password."
+      );
+
+      // Exit recovery mode, sign out, and show login form
+      isRecoveryMode = false;
+      if (passwordResetSection) passwordResetSection.style.display = "none";
+      await supabase.auth.signOut();
+      currentUser = null;
+
+      // Clear hash so the URL looks clean
+      try {
+        history.replaceState(null, "", window.location.pathname);
+      } catch (_) {
+        window.location.hash = "";
+      }
+
+      updateAuthUI();
+    } catch (err) {
+      console.error("Update password exception:", err);
+      alert("Something went wrong while updating your password.");
+    }
   });
 }
 
 // === INIT ===
-handleRecoveryFromURL();
 checkSession();
 track("ts_page_loaded");
