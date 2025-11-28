@@ -3,11 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>TaskSnacks</title>
-  <button id="refreshBtn" class="cute-refresh">🔄 Refresh</button>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- make sure this filename exactly matches your CSS file: style.css -->
   <link rel="stylesheet" href="style.css" />
-  
 </head>
 <body>
   <div class="container">
@@ -26,61 +23,110 @@
       <p id="authStatus" class="auth-status"></p>
     </div>
 
-    <!-- Calendar -->
-    <div id="calendarSection" class="calendar-section" style="display:none;">
-      <div class="calendar-header">
-        <button id="prevMonthBtn" type="button">‹</button>
-        <span id="calendarMonthLabel" class="calendar-month-label">Month Year</span>
-        <button id="nextMonthBtn" type="button">›</button>
+    <!-- Everything below is only visible when logged in -->
+    <div id="appContent" style="display:none;">
+
+      <!-- Top bar: refresh + about -->
+      <div class="top-bar">
+        <button id="refreshBtn" class="cute-refresh" type="button">
+          Refresh
+        </button>
+        <button id="aboutBtn" class="about-btn" type="button">
+          About TaskSnacks
+        </button>
       </div>
-      <div id="calendarGrid" class="calendar-grid"></div>
-    </div>
 
-    <!-- Sort controls -->
-    <div id="sortSection" class="sort-section" style="display:none;">
-      <label for="sortMode">Sort tasks:</label>
-      <select id="sortMode">
-        <option value="priority">By importance (High → Low)</option>
-        <option value="custom">My order</option>
-        <option value="created">By creation time</option>
-      </select>
-    </div>
+      <!-- Calendar -->
+      <div id="calendarSection" class="calendar-section">
+        <div class="calendar-header">
+          <button id="prevMonthBtn" type="button">‹</button>
+          <span id="calendarMonthLabel" class="calendar-month-label">Month Year</span>
+          <button id="nextMonthBtn" type="button">›</button>
+        </div>
+        <div id="calendarGrid" class="calendar-grid"></div>
+      </div>
 
-    <!-- Hidden date input used by JS -->
-    <input id="taskDate" type="date" style="display:none;" />
+      <!-- Sort controls -->
+      <div id="sortSection" class="sort-section">
+        <label for="sortMode">Sort tasks:</label>
+        <select id="sortMode">
+          <option value="priority">By importance (High → Low)</option>
+          <option value="custom">My order</option>
+          <option value="created">By creation time</option>
+        </select>
+      </div>
 
-    <!-- Brain dump -->
-    <textarea
-      id="brainDump"
-      placeholder="Type everything on your mind..."
-    ></textarea>
-    <button id="organizeBtn" type="button">Organize My Mess</button>
+      <!-- Hidden date input used by JS -->
+      <input id="taskDate" type="date" style="display:none;" />
 
-    <!-- Manual add -->
-    <div id="manualAddSection" class="manual-add" style="display:none;">
-      <input
-        id="manualTaskInput"
-        type="text"
-        placeholder="Add a task manually..."
-      />
-      <button id="manualAddBtn" type="button">Add</button>
-    </div>
+      <!-- Brain dump -->
+      <textarea
+        id="brainDump"
+        placeholder="Type everything on your mind..."
+      ></textarea>
+      <button id="organizeBtn" type="button">Organize My Mess</button>
 
-    <!-- Tasks + fun fact -->
-    <div id="tasksContainer"></div>
-    <div id="funFactContainer" class="fun-fact"></div>
+      <!-- Manual add -->
+      <div id="manualAddSection" class="manual-add">
+        <input
+          id="manualTaskInput"
+          type="text"
+          placeholder="Add a task manually..."
+        />
+        <button id="manualAddBtn" type="button">Add</button>
+      </div>
 
-    <!-- Ko-fi -->
-    <div class="coffee">
-      <a href="https://ko-fi.com/tasksnacks" target="_blank" rel="noopener">
-        ☕ Support TaskSnacks
-      </a>
-    </div>
+      <!-- Tasks + fun fact -->
+      <div id="tasksContainer"></div>
+      <div id="funFactContainer" class="fun-fact"></div>
 
-    <!-- Undo bar for delete -->
-    <div id="undoBar" class="undo-bar">
-      <span id="undoText">Task deleted</span>
-      <button id="undoBtn" type="button">Undo</button>
+      <!-- Ko-fi (kept but hidden for now) -->
+      <div class="coffee" style="display:none;">
+        <a href="https://ko-fi.com/tasksnacks" target="_blank" rel="noopener">
+          Support TaskSnacks
+        </a>
+      </div>
+
+      <!-- Undo bar for delete -->
+      <div id="undoBar" class="undo-bar">
+        <span id="undoText">Task deleted</span>
+        <button id="undoBtn" type="button">Undo</button>
+      </div>
+    </div> <!-- /#appContent -->
+  </div> <!-- /.container -->
+
+  <!-- About modal -->
+  <div id="aboutModal" class="modal hidden">
+    <div id="aboutBackdrop" class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <button id="aboutCloseBtn" class="modal-close" type="button">&times;</button>
+      <h2>About TaskSnacks</h2>
+      <p>
+        Most to-do apps are cluttered with boards, tags, and settings. They expect you
+        to be organized before you can get organized. TaskSnacks was created for people
+        who have busy minds, ADHD brains, or just too much going on.
+      </p>
+      <p>
+        Instead of forcing you to structure everything, TaskSnacks lets you brain-dump
+        your entire day in natural language. You can write however you think, with
+        spelling mistakes, half sentences, or scattered ideas. The built-in AI turns
+        that messy text into 3–7 clear, ordered tasks that match the flow of your day.
+      </p>
+      <p>
+        Preparation steps come before the main action. Morning tasks come before
+        afternoon and evening tasks. You see only what actually matters for today.
+      </p>
+      <p>
+        To keep motivation high, each completed task triggers a small fun-fact reward.
+        It is a gentle, dopamine-friendly nudge that makes finishing tasks feel a bit
+        more satisfying, without turning your day into a game.
+      </p>
+      <p>
+        Right now TaskSnacks is in an early refinement stage: the core loop is stable
+        and we are collecting feedback, improving mobile interactions, and polishing
+        the overall experience. The goal is simple: a calm, friendly tool that helps
+        you move from mental clutter to clear action, one small task at a time.
+      </p>
     </div>
   </div>
 
