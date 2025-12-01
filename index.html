@@ -8,42 +8,38 @@
 </head>
 <body>
   <div class="container">
-    <!-- Top bar: About + Refresh (always visible) -->
     <div class="top-bar">
-  <button id="aboutBtn" class="about-btn" type="button">
-    About TaskSnacks
-  </button>
-
-  <div class="top-bar-right">
-    <button id="refreshBtn" class="cute-refresh" type="button">
-      Refresh
-    </button>
-
-    <!-- Settings menu trigger -->
-    <div class="settings-wrapper">
-      <button id="settingsBtn" class="settings-btn" type="button">
-        ⚙
+      <button id="aboutBtn" class="about-btn" type="button">
+        About TaskSnacks
       </button>
 
-      <!-- Small dropdown menu -->
-      <div id="settingsMenu" class="settings-menu hidden">
-        <button id="changePasswordBtn" type="button" class="settings-item">
-          Change my password
+      <div class="top-bar-right">
+        <button id="refreshBtn" class="cute-refresh" type="button">
+          Refresh
         </button>
-        <button id="deleteAccountBtn" type="button" class="settings-item danger-item">
-          Delete my account
-        </button>
+
+        <div class="settings-wrapper">
+          <button id="settingsBtn" class="settings-btn" type="button">
+            ⚙
+          </button>
+
+          <div id="settingsMenu" class="settings-menu hidden">
+            <button id="changePasswordBtn" type="button" class="settings-item">
+              Change my password
+            </button>
+            <button id="deleteAccountBtn" type="button" class="settings-item danger-item">
+              Delete my account
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
 
     <h1>TaskSnacks</h1>
     <p class="subtitle">
       Dump your messy thoughts. Get clear tasks. Earn a fun fact reward.
     </p>
 
-    <!-- Auth section -->
     <div id="authSection">
       <input id="emailInput" type="email" placeholder="Email" />
       <input id="passwordInput" type="password" placeholder="Password" />
@@ -53,60 +49,56 @@
       <p id="authStatus" class="auth-status"></p>
     </div>
     
-<!-- Password reset section (only used when coming from the email link) -->
-<div id="passwordResetSection" style="display:none; margin-top:16px;">
-  <p>Set a new password for your TaskSnacks account.</p>
-  <input
-    id="newPasswordInput"
-    type="password"
-    placeholder="New password"
-    style="margin-top:8px; padding:8px; border-radius:8px; border:1px solid #e5e7eb; width:100%; max-width:260px;"
-  />
-  <button
-    id="setNewPasswordBtn"
-    type="button"
-    style="margin-top:8px;"
-  >
-    Update password
-  </button>
-</div>
+    <div id="passwordResetSection" style="display:none; margin-top:16px;">
+      <p>Set a new password for your TaskSnacks account.</p>
+      <input
+        id="newPasswordInput"
+        type="password"
+        placeholder="New password"
+        style="margin-top:8px; padding:8px; border-radius:8px; border:1px solid #e5e7eb; width:100%; max-width:260px;"
+      />
+      <button id="setNewPasswordBtn" type="button" style="margin-top:8px;">
+        Update password
+      </button>
+    </div>
     
-<!-- About section shown only when logged out -->
-<div id="loggedOutInfo" class="logged-out-info" style="display:none;">
-  <h2>Welcome to TaskSnacks</h2>
-  <p>
-    Most productivity apps are packed with boards, labels, and complicated workflows.
-    TaskSnacks takes a different approach. It is built for people with busy schedules,
-    creative minds, or anyone who simply wants a calmer way to stay organized.
-  </p>
-  <p>
-    Just write your thoughts naturally. You can type fast, messy, out of order, with
-    spelling mistakes, it does not matter. TaskSnacks uses AI to instantly turn your
-    brain-dump into a small list of structured, clear tasks.
-  </p>
-  <p>
-    Each time you complete a task, you receive a small fun fact. It is a gentle,
-    dopamine-friendly reward that helps you stay motivated without pressure.
-  </p>
-  <p>
-    Sign up to experience a lighter, simpler way of planning your day.
-  </p>
-</div>
+    <div id="loggedOutInfo" class="logged-out-info" style="display:none;">
+      <h2>Welcome to TaskSnacks</h2>
+      <p>
+        Most productivity apps are packed with boards, labels, and complicated workflows.
+        TaskSnacks takes a different approach. It is built for people with busy schedules,
+        creative minds, or anyone who simply wants a calmer way to stay organized.
+      </p>
+      <p>
+        Just write your thoughts naturally. You can type fast, messy, out of order, with
+        spelling mistakes, it does not matter. TaskSnacks uses AI to instantly turn your
+        brain-dump into a small list of structured, clear tasks.
+      </p>
+      <p>
+        Each time you complete a task, you receive a small fun fact. It is a gentle,
+        dopamine-friendly reward that helps you stay motivated without pressure.
+      </p>
+      <p>
+        Sign up to experience a lighter, simpler way of planning your day.
+      </p>
+    </div>
     
-    <!-- Everything below is only visible when logged in -->
     <div id="appContent" style="display:none;">
 
-      <!-- Calendar -->
       <div id="calendarSection" class="calendar-section">
         <div class="calendar-header">
           <button id="prevMonthBtn" type="button">‹</button>
-          <span id="calendarMonthLabel" class="calendar-month-label">Month Year</span>
+          
+          <span id="calendarMonthLabel" class="calendar-month-label clickable-label">
+            Month Year 
+            <span id="calChevron" class="chevron">▼</span>
+          </span>
+          
           <button id="nextMonthBtn" type="button">›</button>
         </div>
-        <div id="calendarGrid" class="calendar-grid"></div>
+        <div id="calendarGrid" class="calendar-grid collapsed"></div>
       </div>
 
-      <!-- Sort controls -->
       <div id="sortSection" class="sort-section">
         <label for="sortMode">Sort tasks:</label>
         <select id="sortMode">
@@ -116,17 +108,14 @@
         </select>
       </div>
 
-      <!-- Hidden date input used by JS -->
       <input id="taskDate" type="date" style="display:none;" />
 
-      <!-- Brain dump -->
       <textarea
         id="brainDump"
         placeholder="Type everything on your mind..."
       ></textarea>
       <button id="organizeBtn" type="button">Organize My Mess</button>
 
-      <!-- Manual add -->
       <div id="manualAddSection" class="manual-add">
         <input
           id="manualTaskInput"
@@ -136,28 +125,14 @@
         <button id="manualAddBtn" type="button">Add</button>
       </div>
 
-      <!-- Tasks + fun fact -->
       <div id="tasksContainer"></div>
       <div id="funFactContainer" class="fun-fact"></div>
 
-      <!-- Ko-fi (kept but hidden for now) -->
-      <div class="coffee" style="display:none;">
-        <a href="https://ko-fi.com/tasksnacks" target="_blank" rel="noopener">
-          Support TaskSnacks
-        </a>
-      </div>
-
-      <!-- Undo bar for delete -->
       <div id="undoBar" class="undo-bar">
         <span id="undoText">Task deleted</span>
         <button id="undoBtn" type="button">Undo</button>
       </div>
-    </div> <!-- /#appContent -->
-  </div> <!-- /.container -->
-
-  
-  <!-- About modal (visible whether logged in or not) -->
-  <div id="aboutModal" class="modal hidden">
+    </div> </div> <div id="aboutModal" class="modal hidden">
     <div id="aboutBackdrop" class="modal-backdrop"></div>
     <div class="modal-dialog">
       <button id="aboutCloseBtn" class="modal-close" type="button">&times;</button>
@@ -174,73 +149,56 @@
         that messy text into 3–7 clear, ordered tasks that match the flow of your day.
       </p>
       <p>
-        Preparation steps come before the main action. Morning tasks come before
-        afternoon and evening tasks. You see only what actually matters for today.
-      </p>
-      <p>
         To keep motivation high, each completed task triggers a small fun-fact reward.
         It is a gentle, dopamine-friendly nudge that makes finishing tasks feel a bit
         more satisfying, without turning your day into a game.
       </p>
+    </div>
+  </div>
+
+  <div id="deleteModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <button id="deleteCloseBtn" class="modal-close" type="button">&times;</button>
+      <h2>Delete your account</h2>
       <p>
-        Right now TaskSnacks is in an early refinement stage: the core loop is stable
-        and we are collecting feedback, improving mobile interactions, and polishing
-        the overall experience. The goal is simple: a calm, friendly tool that helps
-        you move from mental clutter to clear action, one small task at a time.
+        This will permanently delete your TaskSnacks account and all your tasks.
+        This action cannot be undone.
+      </p>
+      <p style="margin-top:8px;">
+        Type <strong>DELETE</strong> to confirm.
+      </p>
+      <input
+        id="deleteConfirmInput"
+        type="text"
+        placeholder="Type DELETE to confirm"
+        style="margin-top:8px; width:100%; padding:8px; border-radius:8px; border:1px solid #e5e7eb;"
+      />
+      <button
+        id="finalDeleteBtn"
+        type="button"
+        class="danger-item"
+        style="margin-top:12px;"
+        disabled
+      >
+        Delete my account
+      </button>
+    </div>
+  </div>
+
+  <div id="goodbyeModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog">
+      <h2>Goodbye 👋</h2>
+      <p>
+        Your account and all your data have been deleted.
+        See you another time.
       </p>
     </div>
   </div>
 
-  <!-- Supabase client -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
-  <!-- Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-
-  <!-- Your app logic -->
   <script src="script.js"></script>
-
-<!-- Delete account modal -->
-<div id="deleteModal" class="modal hidden">
-  <div class="modal-backdrop"></div>
-  <div class="modal-dialog">
-    <button id="deleteCloseBtn" class="modal-close" type="button">&times;</button>
-    <h2>Delete your account</h2>
-    <p>
-      This will permanently delete your TaskSnacks account and all your tasks.
-      This action cannot be undone.
-    </p>
-    <p style="margin-top:8px;">
-      Type <strong>DELETE</strong> to confirm.
-    </p>
-    <input
-      id="deleteConfirmInput"
-      type="text"
-      placeholder="Type DELETE to confirm"
-      style="margin-top:8px; width:100%; padding:8px; border-radius:8px; border:1px solid #e5e7eb;"
-    />
-    <button
-      id="finalDeleteBtn"
-      type="button"
-      class="danger-item"
-      style="margin-top:12px;"
-      disabled
-    >
-      Delete my account
-    </button>
-  </div>
-</div>
-
-<!-- Goodbye popup -->
-<div id="goodbyeModal" class="modal hidden">
-  <div class="modal-backdrop"></div>
-  <div class="modal-dialog">
-    <h2>Goodbye 👋</h2>
-    <p>
-      Your account and all your data have been deleted.
-      See you another time.
-    </p>
-  </div>
-</div>
 </body>
 </html>
