@@ -9,10 +9,9 @@ const supabaseKey =
 // Supabase client
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-// Edge function URL for deleting the current user
+// Edge function URL
 const DELETE_FUNCTION_URL =
   "https://fxexewdnbmiybbutcnyv.supabase.co/functions/v1/smooth-action";
-// ^^^ if your function slug is actually "smooth-action", change "delete-user" to "smooth-action"
 
 // ---- ANALYTICS (PostHog) ----
 const ENABLE_TRACKING = false;
@@ -31,7 +30,7 @@ function formatDateLocal(d) {
   return `${year}-${month}-${day}`;
 }
 
-// === Fun facts (local, no API cost) ===
+// === Fun facts ===
 const funFacts = [
   "Sea otters hold hands while sleeping so they don't drift apart.",
   "Cows have best friends and get stressed when separated.",
@@ -96,9 +95,11 @@ const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const authStatus = document.getElementById("authStatus");
 
+// Calendar refs
 const calendarSection = document.getElementById("calendarSection");
 const calendarGrid = document.getElementById("calendarGrid");
 const calendarMonthLabel = document.getElementById("calendarMonthLabel");
+const calChevron = document.getElementById("calChevron");
 const prevMonthBtn = document.getElementById("prevMonthBtn");
 const nextMonthBtn = document.getElementById("nextMonthBtn");
 
@@ -125,12 +126,10 @@ const deleteConfirmInput = document.getElementById("deleteConfirmInput");
 const finalDeleteBtn = document.getElementById("finalDeleteBtn");
 const goodbyeModal = document.getElementById("goodbyeModal");
 
-// Password reset section
 const passwordResetSection = document.getElementById("passwordResetSection");
 const newPasswordInput = document.getElementById("newPasswordInput");
 const setNewPasswordBtn = document.getElementById("setNewPasswordBtn");
 
-// About modal refs
 const aboutBtn = document.getElementById("aboutBtn");
 const aboutModal = document.getElementById("aboutModal");
 const aboutCloseBtn = document.getElementById("aboutCloseBtn");
@@ -143,6 +142,7 @@ let draggedTaskElement = null;
 let lastDeletedTask = null;
 let undoTimeoutId = null;
 let isRecoveryMode = false;
+let isCalendarExpanded = false; // New state for calendar
 
 // === SETTINGS DROPDOWN ===
 if (settingsBtn && settingsMenu) {
@@ -218,7 +218,6 @@ function hideUndoBar() {
 // === AUTH LOGIC ===
 async function checkSession() {
   try {
-    // Use session first (more reliable for persistence)
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData?.session || null;
 
@@ -253,7 +252,6 @@ function updateAuthUI() {
     loginBtn.style.display = "none";
     signupBtn.style.display = "none";
 
-    // hide login inputs when logged in
     emailInput.style.display = "none";
     passwordInput.style.display = "none";
 
@@ -269,7 +267,6 @@ function updateAuthUI() {
     loginBtn.style.display = "inline-block";
     signupBtn.style.display = "inline-block";
 
-    // show login inputs
     emailInput.style.display = "inline-block";
     passwordInput.style.display = "inline-block";
 
@@ -283,7 +280,6 @@ function updateAuthUI() {
     if (appContent) appContent.style.display = "none";
   }
 
-  // Reset password section visibility
   if (passwordResetSection) {
     passwordResetSection.style.display = isRecoveryMode ? "block" : "none";
   }
@@ -310,7 +306,6 @@ signupBtn.addEventListener("click", async () => {
       console.error("Sign up error:", error);
       return alert("Sign up error: " + error.message);
     }
-
     track("ts_signup_success");
     alert("Check your email to confirm your account.");
   } catch (e) {
@@ -337,7 +332,6 @@ loginBtn.addEventListener("click", async () => {
   setToday();
   await loadTasksForSelectedDate();
   await renderCalendar();
-
   track("ts_login_success");
 });
 
@@ -348,7 +342,6 @@ logoutBtn.addEventListener("click", async () => {
   updateAuthUI();
 });
 
-// Refresh button
 if (refreshBtn) {
   refreshBtn.addEventListener("click", () => {
     location.reload();
@@ -356,14 +349,9 @@ if (refreshBtn) {
 }
 
 // === PASSWORD RESET FLOW ===
-
-// 1. Change password: send email
 if (changePasswordBtn) {
   changePasswordBtn.addEventListener("click", async () => {
-    if (!currentUser) {
-      alert("Please log in first.");
-      return;
-    }
+    if (!currentUser) return alert("Please log in first.");
 
     const confirmChange = confirm(
       "We will send a password reset email to your address. Continue?"
@@ -372,23 +360,16 @@ if (changePasswordBtn) {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(
-  currentUser.email,
-  {
-    // add a special flag so we know this is a *password reset*,
-    // not a normal login or email confirmation
-    redirectTo: "https://tasksnacks.github.io/TaskSnacks/#recovery=1"
-  }
-);
-
+        currentUser.email,
+        { redirectTo: "https://tasksnacks.github.io/TaskSnacks/#recovery=1" }
+      );
       if (error) {
-        console.error("Reset password error:", error);
         alert("Could not send reset email: " + error.message);
         return;
       }
-
       alert("Password reset email sent. Check your inbox.");
     } catch (err) {
-      console.error("Reset password exception:", err);
+      console.error(err);
       alert("Something went wrong.");
     } finally {
       if (settingsMenu) settingsMenu.classList.add("hidden");
@@ -396,65 +377,32 @@ if (changePasswordBtn) {
   });
 }
 
-// 2. Detect recovery mode from URL
 function handleRecoveryFromURL() {
   const hash = window.location.hash || "";
-
-  // Only enter recovery mode if we *explicitly* see our custom flag
   if (hash.includes("recovery=1")) {
     isRecoveryMode = true;
-
-    if (passwordResetSection) {
-      passwordResetSection.style.display = "block";
-    }
-    if (authStatus) {
-      authStatus.textContent =
-        "You opened a password reset link. Please set a new password.";
-    }
-
-    // clean up the URL (remove the hash)
+    if (passwordResetSection) passwordResetSection.style.display = "block";
+    if (authStatus) authStatus.textContent = "Please set a new password.";
     try {
-      history.replaceState(
-        null,
-        "",
-        window.location.pathname + window.location.search
-      );
-    } catch (e) {
-      // ignore if not allowed
-    }
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    } catch (e) {}
   } else {
     isRecoveryMode = false;
-    if (passwordResetSection) {
-      passwordResetSection.style.display = "none";
-    }
+    if (passwordResetSection) passwordResetSection.style.display = "none";
   }
 }
 
-// 3. Handle "Update password" button
 if (setNewPasswordBtn) {
   setNewPasswordBtn.addEventListener("click", async () => {
     const newPass = newPasswordInput.value.trim();
-    if (!newPass) {
-      alert("Please type a new password.");
-      return;
-    }
-
+    if (!newPass) return alert("Please type a new password.");
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPass
-      });
-
-      if (error) {
-        console.error("Update password error:", error);
-        alert("Could not update password: " + error.message);
-        return;
-      }
-
+      const { error } = await supabase.auth.updateUser({ password: newPass });
+      if (error) return alert("Could not update password: " + error.message);
       alert("Password updated! You can now use it to log in.");
       isRecoveryMode = false;
       if (passwordResetSection) passwordResetSection.style.display = "none";
     } catch (err) {
-      console.error("Update password exception:", err);
       alert("Something went wrong.");
     }
   });
@@ -471,14 +419,39 @@ function setToday() {
 if (sortMode) {
   sortMode.addEventListener("change", () => {
     if (currentUser) loadTasksForSelectedDate();
-
     track("ts_sort_mode_changed", { mode: sortMode.value });
+  });
+}
+
+// --- Toggle Logic for Calendar ---
+function toggleCalendar(forceState = null) {
+  // If forceState provided, use it. Otherwise flip current state
+  if (forceState !== null) {
+    isCalendarExpanded = forceState;
+  } else {
+    isCalendarExpanded = !isCalendarExpanded;
+  }
+
+  if (isCalendarExpanded) {
+    calendarGrid.classList.remove("collapsed");
+    calChevron.classList.add("rotated");
+  } else {
+    calendarGrid.classList.add("collapsed");
+    calChevron.classList.remove("rotated");
+  }
+}
+
+// Click listener for label
+if (calendarMonthLabel) {
+  calendarMonthLabel.addEventListener("click", () => {
+    toggleCalendar();
   });
 }
 
 prevMonthBtn.addEventListener("click", () => {
   currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
   renderCalendar();
+  // Don't auto collapse when changing month, keep user context
 });
 
 nextMonthBtn.addEventListener("click", () => {
@@ -492,10 +465,13 @@ async function renderCalendar() {
   const year = currentMonthDate.getFullYear();
   const month = currentMonthDate.getMonth();
 
-  calendarMonthLabel.textContent = currentMonthDate.toLocaleDateString(
-    undefined,
-    { month: "long", year: "numeric" }
-  );
+  // Update label text, keep the chevron logic safely
+  const monthText = currentMonthDate.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  // We need to preserve the span inside
+  calendarMonthLabel.innerHTML = `${monthText} <span id="calChevron" class="chevron ${isCalendarExpanded ? 'rotated' : ''}">▼</span>`;
+  
+  // Re-grab the new chevron element since we overwrote innerHTML
+  const newChevron = document.getElementById("calChevron");
 
   const first = new Date(year, month, 1);
   const firstDay = (first.getDay() + 6) % 7; // Monday = 0
@@ -512,9 +488,7 @@ async function renderCalendar() {
     .gte("task_date", monthStart)
     .lte("task_date", monthEnd);
 
-  if (error) {
-    console.error("Calendar query error:", error);
-  }
+  if (error) console.error("Calendar query error:", error);
 
   const datesWithTasks = new Set((data || []).map((row) => row.task_date));
 
@@ -556,6 +530,9 @@ async function renderCalendar() {
         .querySelectorAll(".cal-day.selected")
         .forEach((el) => el.classList.remove("selected"));
       cell.classList.add("selected");
+      
+      // Auto collapse on selection for cleaner UI
+      toggleCalendar(false);
     });
 
     calendarGrid.appendChild(cell);
@@ -579,10 +556,7 @@ async function loadTasksForSelectedDate() {
     .order("sort_index", { ascending: true })
     .order("created_at", { ascending: true });
 
-  if (error) {
-    console.error(error);
-    return;
-  }
+  if (error) return console.error(error);
 
   let tasks = data || [];
 
@@ -594,7 +568,6 @@ async function loadTasksForSelectedDate() {
   }
 
   tasks.forEach((task) => renderTaskItem(task));
-
   renderCalendar();
 }
 
@@ -641,19 +614,16 @@ async function saveTaskOrderToDatabase() {
   });
   try {
     await Promise.all(updates);
-    if (sortMode) {
-      sortMode.value = "created"; // treat as "my order"
-    }
+    if (sortMode) sortMode.value = "created"; 
   } catch (e) {
     console.error("Error saving order:", e);
   }
 }
 
-// === DELETE WITH ANIMATION & UNDO ===
+// === DELETE WITH ANIMATION ===
 async function handleDelete(task, div) {
   div.style.opacity = "0";
   div.style.transform = "translateX(20px)";
-
   setTimeout(async () => {
     await supabase.from("tasks").delete().eq("id", task.id);
     div.remove();
@@ -686,9 +656,7 @@ function showMoveDateDialog(task) {
   box.style.minWidth = "260px";
   box.style.maxWidth = "90%";
   box.style.boxShadow = "0 18px 40px rgba(15,23,42,0.35)";
-  box.innerHTML = `
-    <div style="font-weight:600; margin-bottom:8px; font-size:15px;">Move task to…</div>
-  `;
+  box.innerHTML = `<div style="font-weight:600; margin-bottom:8px; font-size:15px;">Move task to…</div>`;
 
   const dateInput = document.createElement("input");
   dateInput.type = "date";
@@ -711,9 +679,7 @@ function showMoveDateDialog(task) {
   cancelBtn.style.padding = "6px 12px";
   cancelBtn.style.background = "#e5e7eb";
   cancelBtn.style.cursor = "pointer";
-  cancelBtn.onclick = () => {
-    document.body.removeChild(overlay);
-  };
+  cancelBtn.onclick = () => { document.body.removeChild(overlay); };
 
   const moveBtn = document.createElement("button");
   moveBtn.textContent = "Move";
@@ -730,15 +696,12 @@ function showMoveDateDialog(task) {
       document.body.removeChild(overlay);
       return;
     }
-
     try {
       const { data: existing, error } = await supabase
         .from("tasks")
         .select("id")
         .eq("user_id", currentUser.id)
         .eq("task_date", newDate);
-
-      if (error) console.error("Move task date error:", error);
 
       const newIndex = existing ? existing.length : 0;
 
@@ -747,15 +710,11 @@ function showMoveDateDialog(task) {
         .update({ task_date: newDate, sort_index: newIndex })
         .eq("id", task.id);
 
-      track("ts_task_moved_day", {
-        from: task.task_date,
-        to: newDate
-      });
-
+      track("ts_task_moved_day", { from: task.task_date, to: newDate });
       await loadTasksForSelectedDate();
       await renderCalendar();
     } catch (err) {
-      console.error("Move task date error:", err);
+      console.error(err);
       alert("Could not move task.");
     } finally {
       document.body.removeChild(overlay);
@@ -764,12 +723,10 @@ function showMoveDateDialog(task) {
 
   buttonsRow.appendChild(cancelBtn);
   buttonsRow.appendChild(moveBtn);
-
   box.appendChild(dateInput);
   box.appendChild(buttonsRow);
   overlay.appendChild(box);
   document.body.appendChild(overlay);
-
   dateInput.focus();
 }
 
@@ -792,20 +749,12 @@ function renderTaskItem(task) {
   checkbox.type = "checkbox";
   checkbox.checked = !!task.completed;
   checkbox.addEventListener("change", async () => {
-    await supabase
-      .from("tasks")
-      .update({ completed: checkbox.checked })
-      .eq("id", task.id);
-
+    await supabase.from("tasks").update({ completed: checkbox.checked }).eq("id", task.id);
     if (checkbox.checked) {
       const fact = getRandomFunFact();
       if (fact) showFunFact(fact);
     }
-
-    track("ts_task_completed_toggle", {
-      completed: checkbox.checked,
-      priority: task.priority
-    });
+    track("ts_task_completed_toggle", { completed: checkbox.checked, priority: task.priority });
   });
 
   const label = document.createElement("label");
@@ -817,7 +766,6 @@ function renderTaskItem(task) {
   function attachRename(labelEl) {
     labelEl.addEventListener("dblclick", () => {
       if (!currentUser) return;
-
       const currentText = labelEl.textContent || "";
       const input = document.createElement("input");
       input.type = "text";
@@ -826,7 +774,6 @@ function renderTaskItem(task) {
       input.style.borderRadius = "8px";
       input.style.border = "1px solid #d1d5db";
       input.style.padding = "2px 6px";
-
       labelEl.replaceWith(input);
       input.focus();
       input.select();
@@ -834,37 +781,25 @@ function renderTaskItem(task) {
       const finishEdit = async (save) => {
         const newText = save ? input.value.trim() : currentText;
         const finalText = newText || currentText;
-
         const newLabel = document.createElement("label");
         newLabel.textContent = finalText;
         newLabel.style.marginLeft = "10px";
         newLabel.style.flex = "1";
         newLabel.style.cursor = "text";
-
         attachRename(newLabel);
         input.replaceWith(newLabel);
-
         if (save && newText && newText !== currentText) {
-          await supabase
-            .from("tasks")
-            .update({ task_text: newText })
-            .eq("id", task.id);
+          await supabase.from("tasks").update({ task_text: newText }).eq("id", task.id);
         }
       };
 
       input.addEventListener("blur", () => finishEdit(true));
       input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          finishEdit(true);
-        } else if (e.key === "Escape") {
-          e.preventDefault();
-          finishEdit(false);
-        }
+        if (e.key === "Enter") { e.preventDefault(); finishEdit(true); }
+        else if (e.key === "Escape") { e.preventDefault(); finishEdit(false); }
       });
     });
   }
-
   attachRename(label);
 
   left.appendChild(dragHandle);
@@ -885,26 +820,17 @@ function renderTaskItem(task) {
   prioritySelect.value = task.priority || "low";
   prioritySelect.addEventListener("change", async () => {
     const newPriority = prioritySelect.value;
-    await supabase
-      .from("tasks")
-      .update({ priority: newPriority })
-      .eq("id", task.id);
-
+    await supabase.from("tasks").update({ priority: newPriority }).eq("id", task.id);
     div.classList.remove("high", "medium", "low");
     div.classList.add(newPriority);
-
-    if (sortMode && sortMode.value === "priority") {
-      loadTasksForSelectedDate();
-    }
+    if (sortMode && sortMode.value === "priority") loadTasksForSelectedDate();
   });
 
   const moveDateBtn = document.createElement("button");
   moveDateBtn.textContent = "📆";
   moveDateBtn.title = "Move to another day";
   moveDateBtn.className = "task-move-date";
-  moveDateBtn.addEventListener("click", () => {
-    showMoveDateDialog(task);
-  });
+  moveDateBtn.addEventListener("click", () => showMoveDateDialog(task));
 
   const upBtn = document.createElement("button");
   upBtn.textContent = "↑";
@@ -934,9 +860,7 @@ function renderTaskItem(task) {
   deleteBtn.textContent = "✕";
   deleteBtn.title = "Delete task";
   deleteBtn.className = "task-delete";
-  deleteBtn.addEventListener("click", () => {
-    handleDelete(task, div);
-  });
+  deleteBtn.addEventListener("click", () => handleDelete(task, div));
 
   controls.appendChild(prioritySelect);
   controls.appendChild(moveDateBtn);
@@ -965,7 +889,6 @@ function renderTaskItem(task) {
     if (e.touches.length !== 1) return;
     e.preventDefault();
     const touch = e.touches[0];
-
     draggedTaskElement = div;
     div.classList.add("dragging");
 
@@ -980,12 +903,10 @@ function renderTaskItem(task) {
       document.removeEventListener("touchmove", handleMove);
       document.removeEventListener("touchend", handleEnd);
       document.removeEventListener("touchcancel", handleEnd);
-
       draggedTaskElement = null;
       div.classList.remove("dragging");
       await saveTaskOrderToDatabase();
     };
-
     document.addEventListener("touchmove", handleMove, { passive: false });
     document.addEventListener("touchend", handleEnd);
     document.addEventListener("touchcancel", handleEnd);
@@ -996,41 +917,30 @@ function renderTaskItem(task) {
   let touchCurrentX = null;
   let isSwiping = false;
 
-  div.addEventListener(
-    "touchstart",
-    (e) => {
-      if (e.touches.length !== 1) return;
-      touchStartX = e.touches[0].clientX;
-      touchCurrentX = touchStartX;
-      isSwiping = true;
-    },
-    { passive: true }
-  );
+  div.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1) return;
+    touchStartX = e.touches[0].clientX;
+    touchCurrentX = touchStartX;
+    isSwiping = true;
+  }, { passive: true });
 
-  div.addEventListener(
-    "touchmove",
-    (e) => {
-      if (!isSwiping) return;
-      touchCurrentX = e.touches[0].clientX;
-      const deltaX = touchCurrentX - touchStartX;
-
-      if (deltaX < 0) {
-        div.style.transform = `translateX(${deltaX}px)`;
-        const opacity = Math.max(0.3, 1 + deltaX / 200);
-        div.style.opacity = String(opacity);
-      }
-    },
-    { passive: true }
-  );
+  div.addEventListener("touchmove", (e) => {
+    if (!isSwiping) return;
+    touchCurrentX = e.touches[0].clientX;
+    const deltaX = touchCurrentX - touchStartX;
+    if (deltaX < 0) {
+      div.style.transform = `translateX(${deltaX}px)`;
+      const opacity = Math.max(0.3, 1 + deltaX / 200);
+      div.style.opacity = String(opacity);
+    }
+  }, { passive: true });
 
   div.addEventListener("touchend", () => {
     if (!isSwiping) return;
     isSwiping = false;
-
     const deltaX = touchCurrentX - touchStartX;
-    if (deltaX < -80) {
-      handleDelete(task, div);
-    } else {
+    if (deltaX < -80) handleDelete(task, div);
+    else {
       div.style.transform = "translateX(0)";
       div.style.opacity = "1";
     }
@@ -1042,13 +952,10 @@ async function addManualTask() {
   if (!currentUser) return alert("Please log in first.");
   const text = manualTaskInput.value.trim();
   if (!text) return;
-
   const date = taskDateInput.value;
   if (!date) return alert("Please choose a date.");
 
-  const existingItems = [
-    ...tasksContainer.querySelectorAll(".task-item")
-  ];
+  const existingItems = [...tasksContainer.querySelectorAll(".task-item")];
   const baseIndex = existingItems.length;
 
   const { data, error } = await supabase
@@ -1064,14 +971,8 @@ async function addManualTask() {
     .select()
     .single();
 
-  if (error) {
-    console.error("Manual add error:", error);
-    alert("Could not add task.");
-    return;
-  }
-
+  if (error) return alert("Could not add task.");
   track("ts_task_created", { source: "manual" });
-
   renderTaskItem(data);
   manualTaskInput.value = "";
   await saveTaskOrderToDatabase();
@@ -1080,18 +981,14 @@ async function addManualTask() {
 
 manualAddBtn.addEventListener("click", addManualTask);
 manualTaskInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    addManualTask();
-  }
+  if (e.key === "Enter") { e.preventDefault(); addManualTask(); }
 });
 
-// === ORGANIZE BUTTON (AI + SAVE) ===
+// === ORGANIZE BUTTON (AI) ===
 organizeBtn.addEventListener("click", async () => {
   if (!currentUser) return alert("Please log in first.");
   const dumpText = brainDump.value.trim();
   if (!dumpText) return alert("Please type something first.");
-
   const date = taskDateInput.value;
   if (!date) return alert("Please choose a date.");
 
@@ -1099,10 +996,7 @@ organizeBtn.addEventListener("click", async () => {
   organizeBtn.textContent = "Organizing…";
   funFactContainer.textContent = "";
   hideUndoBar();
-
-  track("ts_organize_clicked", {
-    text_length: dumpText.length
-  });
+  track("ts_organize_clicked", { text_length: dumpText.length });
 
   try {
     const response = await fetch(workerUrl, {
@@ -1110,17 +1004,11 @@ organizeBtn.addEventListener("click", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mode: "tasks", text: dumpText })
     });
-
     const data = await response.json();
     if (!data.ok) throw new Error(data.error || "Unknown error from worker.");
 
-    const lines = data.tasksText
-      .split("\n")
-      .filter((line) => line.trim().startsWith("-"));
-
-    const existingItems = [
-      ...tasksContainer.querySelectorAll(".task-item")
-    ];
+    const lines = data.tasksText.split("\n").filter((line) => line.trim().startsWith("-"));
+    const existingItems = [...tasksContainer.querySelectorAll(".task-item")];
     let baseIndex = existingItems.length;
 
     for (const line of lines) {
@@ -1129,7 +1017,6 @@ organizeBtn.addEventListener("click", async () => {
       if (match) {
         const priority = match[1].toLowerCase();
         const text = match[2];
-
         const { data: inserted, error } = await supabase
           .from("tasks")
           .insert({
@@ -1142,19 +1029,13 @@ organizeBtn.addEventListener("click", async () => {
           })
           .select()
           .single();
-
         if (!error && inserted) {
-          track("ts_task_created", {
-            source: "ai",
-            priority: priority
-          });
-
+          track("ts_task_created", { source: "ai", priority });
           renderTaskItem(inserted);
           baseIndex += 1;
         }
       }
     }
-
     await saveTaskOrderToDatabase();
     await renderCalendar();
   } catch (err) {
@@ -1167,164 +1048,53 @@ organizeBtn.addEventListener("click", async () => {
   }
 });
 
-// === ABOUT MODAL LOGIC ===
-if (aboutBtn && aboutModal) {
-  aboutBtn.addEventListener("click", () => {
-    aboutModal.classList.remove("hidden");
-  });
-}
+// === MODALS ===
+if (aboutBtn && aboutModal) aboutBtn.addEventListener("click", () => aboutModal.classList.remove("hidden"));
+if (aboutCloseBtn) aboutCloseBtn.addEventListener("click", () => aboutModal.classList.add("hidden"));
+if (aboutBackdrop) aboutBackdrop.addEventListener("click", () => aboutModal.classList.add("hidden"));
 
-if (aboutCloseBtn) {
-  aboutCloseBtn.addEventListener("click", () => {
-    aboutModal.classList.add("hidden");
-  });
-}
-
-if (aboutBackdrop) {
-  aboutBackdrop.addEventListener("click", () => {
-    aboutModal.classList.add("hidden");
-  });
-}
-
-// --- DELETE ACCOUNT (real flow using Edge Function) ---
-// --- DELETE ACCOUNT (real implementation) ---
 if (deleteAccountBtn) {
   deleteAccountBtn.addEventListener("click", async () => {
-    if (!currentUser) {
-      alert("Please log in first.");
-      return;
-    }
-
-    // Ask the user to type DELETE
-    const typed = prompt(
-      "Type DELETE to permanently delete your TaskSnacks account and all your tasks.\n\nThis cannot be undone."
-    );
-
-    if (typed !== "DELETE") {
-      alert("Account deletion cancelled.");
-      if (settingsMenu) settingsMenu.classList.add("hidden");
-      return;
-    }
-
-    try {
-      // 1) Get the current session access token
-      const { data: sessionData, error: sessionError } =
-        await supabase.auth.getSession();
-
-      if (sessionError || !sessionData.session) {
-        console.error("Session error:", sessionError);
-        alert("Could not get your session. Please log in again and retry.");
-        return;
-      }
-
-      const token = sessionData.session.access_token;
-
-      // 2) Call Edge Function
-      const resp = await fetch(DELETE_FUNCTION_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const body = await resp.json().catch(() => ({}));
-
-      if (!resp.ok) {
-        console.error("delete-user error:", body);
-        alert(body.error || "Something went wrong deleting your account.");
-        return;
-      }
-
-      // 3) Sign the user out locally
-      await supabase.auth.signOut();
-
-      // 4) Friendly goodbye message
-      alert(
-        "Your account and all your tasks have been deleted.\n\nGoodbye for now – hope to see you another time 💚"
-      );
-
-      // 5) Reload to clean state
-      window.location.href = "https://tasksnacks.github.io/TaskSnacks/";
-    } catch (err) {
-      console.error("Unexpected delete error:", err);
-      alert("Unexpected error deleting account. Please try again.");
-    } finally {
-      if (settingsMenu) settingsMenu.classList.add("hidden");
-    }
+    if (!currentUser) return alert("Please log in first.");
+    deleteModal.classList.remove("hidden");
   });
 }
 
-// Close delete modal (X button or backdrop)
-if (deleteCloseBtn) {
-  deleteCloseBtn.addEventListener("click", () => {
-    if (deleteModal) {
-      deleteModal.classList.add("hidden");
-    }
-  });
-}
+if (deleteCloseBtn) deleteCloseBtn.addEventListener("click", () => deleteModal.classList.add("hidden"));
 if (deleteModal) {
   const backdrop = deleteModal.querySelector(".modal-backdrop");
-  if (backdrop) {
-    backdrop.addEventListener("click", () => {
-      deleteModal.classList.add("hidden");
-    });
-  }
+  if (backdrop) backdrop.addEventListener("click", () => deleteModal.classList.add("hidden"));
 }
 
-// Enable final delete only when user typed DELETE
 if (deleteConfirmInput && finalDeleteBtn) {
   deleteConfirmInput.addEventListener("input", () => {
     finalDeleteBtn.disabled = deleteConfirmInput.value.trim() !== "DELETE";
   });
 }
 
-// Final delete click: call Edge Function, log out, show goodbye
 if (finalDeleteBtn) {
   finalDeleteBtn.addEventListener("click", async () => {
-    if (!currentUser) {
-      alert("Please log in first.");
-      return;
-    }
-
-    if (deleteConfirmInput.value.trim() !== "DELETE") {
-      alert('Please type "DELETE" to confirm.');
-      return;
-    }
-
+    if (!currentUser) return alert("Please log in first.");
+    if (deleteConfirmInput.value.trim() !== "DELETE") return alert('Please type "DELETE" to confirm.');
     finalDeleteBtn.disabled = true;
     finalDeleteBtn.textContent = "Deleting…";
 
     try {
-      // Call your Supabase Edge Function (must be named "delete-user")
-      const { data, error } = await supabase.functions.invoke("delete-user", {
-        method: "POST",
-      });
-
+      const { data, error } = await supabase.functions.invoke("delete-user", { method: "POST" });
       if (error) {
-        console.error("Delete user error:", error);
         alert("Could not delete account: " + error.message);
         finalDeleteBtn.disabled = false;
         finalDeleteBtn.textContent = "Delete my account";
         return;
       }
-
-      // Sign out locally
       await supabase.auth.signOut();
       currentUser = null;
       updateAuthUI();
-
-      // Hide delete modal, show goodbye modal
       if (deleteModal) deleteModal.classList.add("hidden");
       if (goodbyeModal) goodbyeModal.classList.remove("hidden");
-
-      // After 2 seconds, hide goodbye modal and show normal logged-out state
-      setTimeout(() => {
-        if (goodbyeModal) goodbyeModal.classList.add("hidden");
-      }, 2000);
+      setTimeout(() => { if (goodbyeModal) goodbyeModal.classList.add("hidden"); }, 2000);
     } catch (err) {
-      console.error("Delete user exception:", err);
-      alert("Something went wrong while deleting your account.");
+      alert("Something went wrong.");
       finalDeleteBtn.disabled = false;
       finalDeleteBtn.textContent = "Delete my account";
     }
