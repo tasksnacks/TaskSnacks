@@ -98,15 +98,17 @@
     <div id="appContent" style="display:none;">
 
       <!-- Calendar (collapsible) -->
-      <div id="calendarSection" class="calendar-section">
-        <div class="calendar-top-row">
-          <span id="calendarTodayLabel" class="calendar-today-label">
-            Today: –
-          </span>
-          <button id="calendarToggleBtn" type="button" class="calendar-toggle-btn">
-            Show calendar
-          </button>
-        </div>
+     <div id="calendarSection" class="calendar-section">
+  <div class="calendar-header">
+    <button id="prevMonthBtn" type="button">‹</button>
+    <span id="calendarMonthLabel" class="calendar-month-label">Month Year</span>
+    <button id="nextMonthBtn" type="button">›</button>
+  </div>
+  <div class="calendar-toggle-row">
+    <button id="calendarToggleBtn" type="button">Hide calendar</button>
+  </div>
+  <div id="calendarGrid" class="calendar-grid"></div>
+</div>
 
         <!-- These controls + grid are hidden when collapsed -->
         <div id="calendarInner" class="calendar-inner collapsed">
