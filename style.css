@@ -861,3 +861,15 @@ button#organizeBtn:disabled {
   from { transform: translateY(20px); opacity: 0; }
   to   { transform: translateY(0); opacity: 1; }
 }
+.try-ai-hint {
+  margin-top: 10px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.6);
+  padding: 12px 16px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(15,23,42,0.08);
+  animation: fadeUp 0.4s ease-out;
+}
