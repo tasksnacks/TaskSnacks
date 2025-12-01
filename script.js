@@ -22,36 +22,14 @@
     "Pigeons can recognize themselves in a mirror.",
     "The Eiffel Tower can be 15 cm taller in the summer due to heat expansion.",
     "Crows can hold grudges against specific humans.",
-    "Cats have a special reflective layer in their eyes called the tapetum lucidum that helps them see better in low light.",
-    "Hedgehogs can have over 5,000 spines on their backs.",
-    "Goldfish have a memory longer than three seconds; they can actually remember things for months.",
-    "Human noses can distinguish at least 1 trillion different smells.",
-    "Koalas have fingerprints almost indistinguishable from humans under a microscope.",
-    "Penguins propose to their mates with a pebble.",
-    "Some plants can 'talk' to each other using chemical signals through their roots.",
-    "Owls can rotate their heads up to 270 degrees.",
-    "The heart of a blue whale can weigh as much as a small car.",
     "Butterflies taste with their feet.",
     "There’s a species of jellyfish that can technically live forever (Turritopsis dohrnii).",
     "Bees can recognize human faces.",
     "A group of porcupines is called a prickle.",
-    "The shortest war in history lasted about 38 minutes (Anglo-Zanzibar War).",
-    "A cloud can weigh more than a million kilograms.",
     "Some frogs can freeze solid in winter and thaw back to life in spring.",
     "Hippos’ sweat acts as natural sunscreen.",
-    "Giraffes have the same number of neck vertebrae as humans: seven.",
     "Starfish can regenerate lost arms; some can regenerate a whole body from one arm.",
-    "Coconut water can be used as emergency blood plasma.",
-    "Dolphins each have a unique whistle that functions like a name.",
-    "Goats have rectangular pupils, giving them a very wide field of vision.",
-    "Dragonflies can fly in any direction and hover like little helicopters.",
-    "A group of crows is called a murder.",
-    "Some snakes can glide through the air by flattening their bodies.",
-    "Ants don’t have lungs; they breathe through tiny holes in their bodies called spiracles.",
-    "Lightning can heat the air to temperatures hotter than the surface of the sun.",
-    "There are more possible ways to shuffle a deck of cards than atoms on Earth.",
-    "Tomatoes were once considered poisonous in parts of Europe.",
-    "Raccoons wash their food in water when given the chance, even if it doesn’t need washing."
+    "Dolphins each have a unique whistle that functions like a name."
   ];
 
   const affirmations = [
@@ -74,46 +52,43 @@
     "You don’t need a perfect system; you just need one step.",
     "You chose action over avoidance. That’s brave.",
     "You are slowly building a future where this feels easier.",
-    "You navigated your own brain today. That’s not easy.",
-    "You are showing up for yourself in a very real way.",
-    "Your value is not measured in completed tasks, but this still matters.",
-    "You are allowed to try again tomorrow without shame.",
-    "You balanced your energy and effort. That’s smart, not lazy.",
-    "You just proved that future-you can trust present-you.",
-    "You’re quietly rewriting your story about ‘I never follow through.’",
-    "You’re not behind; you’re just on your path.",
-    "You created a little island of order inside your chaos.",
-    "You’re making it easier for tomorrow’s version of you.",
-    "You honored your attention instead of fighting it.",
-    "You’re doing real emotional work every time you complete a task.",
-    "You’re building a life where your brain feels more safe and less overwhelmed.",
-    "You don’t have to earn rest by suffering; this was enough.",
-    "You just did something past-you was procrastinating on. Legendary.",
-    "Somewhere in the background, your nervous system is quietly exhaling.",
-    "Today you were your own ally instead of your own critic."
+    "You navigated your own brain today. That’s not easy."
   ];
 
+  // Simple ASCII using normal strings + \n
   const asciiAnimals = [
-    { title: "Tiny cat", ascii: String.raw` /\_/\n( o.o )\n > ^ <` },
-    { title: "Sleepy snail", ascii: String.raw`  __\n /o \_____\n \__/-="="` },
-    { title: "Little duck", ascii: String.raw`  _\n<(o )\n (   )\n  " "` },
-    { title: "Chill whale", ascii: String.raw`      __\n ____/  \___\n(____    ___)\n     \__/` },
-    { title: "Happy dog", ascii: String.raw` / \__\n(    @\___\n /         O\n/   (_____/\n/_____/   U` },
-    { title: "Tiny bear", ascii: String.raw`ʕ•ᴥ•ʔ` },
-    { title: "Cheerful bunny", ascii: String.raw` (\_/)\n ( •_•)\n / >🍪` },
-    { title: "Baby dragon", ascii: String.raw`   / \__\n  (    @\___\n  /         \\\n /  (_____/\n/_____/   U` },
-    { title: "Minimal frog", ascii: String.raw`  @..@\n (____)\n (____)\n  ^^  ^^` },
-    { title: "Tiny owl", ascii: String.raw`  ,_, \n (O,O)\n (   )\n  " "` },
-    { title: "Cute seal", ascii: String.raw`   __\n _(  )_\n(      )___\n (________)` },
-    { title: "Tiny fox", ascii: String.raw` /\   /\n(  o o  )\n (  =  )\n  (___)` },
-    { title: "Excited hamster", ascii: String.raw`  (\_/)\n ( '.' )\n (")_(")` },
-    { title: "Baby penguin", ascii: String.raw`   _\n ('v')\n /   \\\n(_____)` },
-    { title: "Smol hedgehog", ascii: String.raw`  ,-"-.\n /     \\\n| 0   0 |\n\  .-. /\n '---'` },
-    { title: "Chill turtle", ascii: String.raw`   ____  \n _/    \_\n/  o  o  \\\n\   --   /\n \______/` },
-    { title: "Tiny mouse", ascii: String.raw` ()_()\n( ' .')\n(  > )` },
-    { title: "Little crab", ascii: String.raw`  (\__/)\n  ( •-•)\n  /    \\\n /______\` },
-    { title: "Happy jellyfish", ascii: String.raw`   .-.\n  (   ).\n (___(__)\n  /  /  \\\n  ~  ~   ~` },
-    { title: "Supportive blob", ascii: String.raw`  _____\n (     )\n ( •_• )\n (_____)` }
+    {
+      title: "Tiny cat",
+      ascii: " /\\_/\\\n( o.o )\n > ^ <"
+    },
+    {
+      title: "Sleepy snail",
+      ascii: "  __\n /o \\_____\n \\__/-=\"=\""
+    },
+    {
+      title: "Little duck",
+      ascii: "  _\n<(o )\n (   )\n  \" \""
+    },
+    {
+      title: "Tiny bear",
+      ascii: "ʕ•ᴥ•ʔ"
+    },
+    {
+      title: "Cheerful bunny",
+      ascii: " (\\_/)\n ( •_•)\n / >🍪"
+    },
+    {
+      title: "Minimal frog",
+      ascii: "  @..@\n (____)\n (____)\n  ^^  ^^"
+    },
+    {
+      title: "Tiny owl",
+      ascii: "  ,_,\n (O,O)\n (   )\n  \" \""
+    },
+    {
+      title: "Supportive blob",
+      ascii: "  _____\n (     )\n ( •_• )\n (_____)"  
+    }
   ];
 
   function pick(arr) {
@@ -150,7 +125,7 @@
       body: "A tiny friend appears to celebrate:",
       ascii: animal.ascii,
       inlineText: `🐾 A tiny ${animal.title.toLowerCase()} came to say: well done.`,
-      confetti: Math.random() < 0.5
+      confetti: Math.random() < 0.6
     };
   }
 
