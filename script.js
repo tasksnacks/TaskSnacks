@@ -305,7 +305,7 @@ function showReward() {
   setTimeout(() => {
     popup.classList.remove("visible");
     setTimeout(() => popup.remove(), 200);
-  }, 2600);
+  }, 5000);
 }
 
 // === UNDO HELPERS ===
