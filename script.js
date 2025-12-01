@@ -65,7 +65,7 @@ const manualAddBtn = document.getElementById("manualAddBtn");
 const appContent = document.getElementById("appContent");
 const loggedOutInfo = document.getElementById("loggedOutInfo");
 const refreshBtn = document.getElementById("refreshBtn");
-
+const tryAIPreviewHint = document.getElementById("tryAIPreviewHint");
 // --- CALENDAR TOGGLE (collapsed by default) ---
 if (calendarToggleBtn && calendarGrid) {
   let isCalendarCollapsed = true;
@@ -270,51 +270,56 @@ function updateAuthUI() {
   const hasManual = !!manualAddSection;
 
   if (currentUser) {
-    // LOGGED IN
+    // === LOGGED IN ===
     authStatus.textContent = `Logged in as ${currentUser.email}`;
     logoutBtn.style.display = "inline-block";
     loginBtn.style.display = "none";
     signupBtn.style.display = "none";
 
+    // hide login inputs
     emailInput.style.display = "none";
     passwordInput.style.display = "none";
-    if (tryAIPreviewHint) tryAIPreviewHint.style.display = "none";
 
     if (loggedOutInfo) loggedOutInfo.style.display = "none";
     if (hasCalendar) calendarSection.style.display = "block";
     if (hasSort) sortSection.style.display = "block";
     if (hasManual) manualAddSection.style.display = "flex";
-    if (appContent) appContent.style.display = "block";
     organizeBtn.disabled = false;
-    isPreviewMode = false;
-    if (previewNote) previewNote.style.display = "none";
+    if (appContent) appContent.style.display = "block";
+
+    // hide “try our AI” hint when logged in
+    if (tryAIPreviewHint) tryAIPreviewHint.style.display = "none";
   } else {
-    // LOGGED OUT → preview mode available
-    if (tryAIPreviewHint) tryAIPreviewHint.style.display = "block";
+    // === LOGGED OUT ===
     authStatus.textContent = "Not logged in.";
     logoutBtn.style.display = "none";
     loginBtn.style.display = "inline-block";
     signupBtn.style.display = "inline-block";
 
+    // show login inputs
     emailInput.style.display = "inline-block";
     passwordInput.style.display = "inline-block";
 
+    // Show About box + AI area as a preview layout
     if (loggedOutInfo) loggedOutInfo.style.display = "block";
+
+    // Calendar + sorting + manual add are hidden in preview mode
     if (hasCalendar) calendarSection.style.display = "none";
     if (hasSort) sortSection.style.display = "none";
     if (hasManual) manualAddSection.style.display = "none";
 
-    // IMPORTANT: show the main content so user can try the AI once
+    // BUT: keep the brain dump + Organize button area visible
     if (appContent) appContent.style.display = "block";
-    organizeBtn.disabled = false;
+    organizeBtn.disabled = false; // (still blocked by login check in handler)
+
+    // show “try our AI” hint
+    if (tryAIPreviewHint) tryAIPreviewHint.style.display = "block";
 
     tasksContainer.innerHTML = "";
     funFactContainer.textContent = "";
-    if (!isPreviewMode && previewNote) {
-      previewNote.style.display = "none";
-    }
   }
 
+  // Reset password section visibility
   if (passwordResetSection) {
     passwordResetSection.style.display = isRecoveryMode ? "block" : "none";
   }
