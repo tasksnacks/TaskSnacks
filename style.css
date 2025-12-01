@@ -106,9 +106,10 @@ h1 {
 }
 
 #authSection button#logoutBtn {
-  background: #f97373;
-  color: #ffffff;
-  box-shadow: 0 6px 16px rgba(248, 113, 113, 0.35);
+  background: transparent;
+  border: 1px solid #9ca3af;   /* soft grey border */
+  color: #4b5563;               /* calm dark grey text */
+  box-shadow: none;
 }
 
 #authSection button:hover {
@@ -872,4 +873,17 @@ button#organizeBtn:disabled {
   border-radius: 14px;
   box-shadow: 0 4px 12px rgba(15,23,42,0.08);
   animation: fadeUp 0.4s ease-out;
+}
+/* Auth section as a soft card */
+#authSection.auth-card {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 10px 28px rgba(15,23,42,0.16);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
 }
