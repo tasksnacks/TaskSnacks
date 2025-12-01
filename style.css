@@ -156,9 +156,9 @@ h1 {
 
 .calendar-header {
   display: flex;
-  justify-content: space-between;  /* nav on left, toggle on right */
   align-items: center;
-  gap: 8px;
+  justify-content: center;   /* center everything  */
+  gap: 12px;                 /* space between nav and toggle button */
   margin-bottom: 8px;
 }
 
