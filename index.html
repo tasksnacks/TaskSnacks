@@ -75,17 +75,15 @@
 <div id="appContent" style="display:none;">
 
   <!-- Calendar -->
-  <div id="calendarSection" class="calendar-section">
   <div class="calendar-header">
-    <div class="calendar-nav">
-      <button id="prevMonthBtn" type="button">‹</button>
-      <span id="calendarMonthLabel" class="calendar-month-label">Month Year</span>
-      <button id="nextMonthBtn" type="button">›</button>
-    </div>
-    <button id="calendarToggleBtn" type="button" class="calendar-toggle-btn">
-      Hide calendar
-    </button>
+  <div class="calendar-header-left">
+    <span id="calendarTodayLabel" class="calendar-today-label"></span>
   </div>
+
+  <div class="calendar-header-right">
+    <button id="calendarToggleBtn" class="calendar-toggle-btn">Show calendar</button>
+  </div>
+</div>
   <div id="calendarGrid" class="calendar-grid"></div>
 </div>
 
