@@ -9,10 +9,6 @@ const supabaseKey =
 // Supabase client
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-// Edge function URL (only used if you keep the prompt-style delete; can be removed if unused)
-const DELETE_FUNCTION_URL =
-  "https://fxexewdnbmiybbutcnyv.supabase.co/functions/v1/smooth-action";
-
 // ---- ANALYTICS (PostHog) ----
 const ENABLE_TRACKING = false;
 function track(eventName, props = {}) {
@@ -52,8 +48,6 @@ const prevMonthBtn = document.getElementById("prevMonthBtn");
 const nextMonthBtn = document.getElementById("nextMonthBtn");
 const calendarToggleBtn = document.getElementById("calendarToggleBtn");
 const calendarTodayLabel = document.getElementById("calendarTodayLabel");
-const calendarToggleBtn = document.getElementById("calendarToggleBtn");
-const calendarInner = document.getElementById("calendarInner");
 
 const sortSection = document.getElementById("sortSection");
 const sortMode = document.getElementById("sortMode");
@@ -66,26 +60,7 @@ const appContent = document.getElementById("appContent");
 const loggedOutInfo = document.getElementById("loggedOutInfo");
 const refreshBtn = document.getElementById("refreshBtn");
 const tryAIPreviewHint = document.getElementById("tryAIPreviewHint");
-// --- CALENDAR TOGGLE (collapsed by default) ---
-if (calendarToggleBtn && calendarGrid) {
-  let isCalendarCollapsed = true;
 
-  // start hidden
-  calendarGrid.style.display = "none";
-  calendarToggleBtn.textContent = "Show calendar";
-
-  calendarToggleBtn.addEventListener("click", () => {
-    isCalendarCollapsed = !isCalendarCollapsed;
-
-    if (isCalendarCollapsed) {
-      calendarGrid.style.display = "none";
-      calendarToggleBtn.textContent = "Show calendar";
-    } else {
-      calendarGrid.style.display = "grid";
-      calendarToggleBtn.textContent = "Hide calendar";
-    }
-  });
-}
 // Settings + delete modal
 const settingsBtn = document.getElementById("settingsBtn");
 const settingsMenu = document.getElementById("settingsMenu");
@@ -138,7 +113,6 @@ if (settingsBtn && settingsMenu) {
 
 // === REWARD DISPLAY (uses rewards.js) ===
 function showReward() {
-  // If rewards.js is not loaded for some reason, fallback to a simple message
   if (
     !window.TaskSnacksRewards ||
     typeof window.TaskSnacksRewards.getRandomReward !== "function"
@@ -150,26 +124,22 @@ function showReward() {
   const reward = window.TaskSnacksRewards.getRandomReward();
   if (!reward) return;
 
-  // inline text under the list
+  // inline under the list
   funFactContainer.textContent = reward.inlineText || reward.title || "Nice work!";
 
-  // popup in the middle
+  // popup
   const popup = document.createElement("div");
   popup.className = "fun-fact-popup";
 
   let inner = `<strong>${reward.title || "Nice job"}</strong><br>`;
-  if (reward.body) {
-    inner += `${reward.body}<br>`;
-  }
+  if (reward.body) inner += `${reward.body}<br>`;
   if (reward.ascii) {
     inner += `<pre style="margin-top:8px; font-size:11px; line-height:1.1;">${reward.ascii}</pre>`;
   }
   popup.innerHTML = inner;
   document.body.appendChild(popup);
 
-  requestAnimationFrame(() => {
-    popup.classList.add("visible");
-  });
+  requestAnimationFrame(() => popup.classList.add("visible"));
 
   if (window.confetti && reward.confetti !== false) {
     window.confetti({
@@ -270,13 +240,12 @@ function updateAuthUI() {
   const hasManual = !!manualAddSection;
 
   if (currentUser) {
-    // === LOGGED IN ===
+    // LOGGED IN
     authStatus.textContent = `Logged in as ${currentUser.email}`;
     logoutBtn.style.display = "inline-block";
     loginBtn.style.display = "none";
     signupBtn.style.display = "none";
 
-    // hide login inputs
     emailInput.style.display = "none";
     passwordInput.style.display = "none";
 
@@ -287,39 +256,33 @@ function updateAuthUI() {
     organizeBtn.disabled = false;
     if (appContent) appContent.style.display = "block";
 
-    // hide “try our AI” hint when logged in
     if (tryAIPreviewHint) tryAIPreviewHint.style.display = "none";
+    if (previewNote) previewNote.style.display = "none";
   } else {
-    // === LOGGED OUT ===
+    // LOGGED OUT
     authStatus.textContent = "Not logged in.";
     logoutBtn.style.display = "none";
     loginBtn.style.display = "inline-block";
     signupBtn.style.display = "inline-block";
 
-    // show login inputs
     emailInput.style.display = "inline-block";
     passwordInput.style.display = "inline-block";
 
-    // Show About box + AI area as a preview layout
     if (loggedOutInfo) loggedOutInfo.style.display = "block";
 
-    // Calendar + sorting + manual add are hidden in preview mode
     if (hasCalendar) calendarSection.style.display = "none";
     if (hasSort) sortSection.style.display = "none";
     if (hasManual) manualAddSection.style.display = "none";
 
-    // BUT: keep the brain dump + Organize button area visible
     if (appContent) appContent.style.display = "block";
-    organizeBtn.disabled = false; // (still blocked by login check in handler)
+    organizeBtn.disabled = false;
 
-    // show “try our AI” hint
     if (tryAIPreviewHint) tryAIPreviewHint.style.display = "block";
 
     tasksContainer.innerHTML = "";
     funFactContainer.textContent = "";
   }
 
-  // Reset password section visibility
   if (passwordResetSection) {
     passwordResetSection.style.display = isRecoveryMode ? "block" : "none";
   }
@@ -338,7 +301,6 @@ signupBtn.addEventListener("click", async () => {
       email,
       password,
       options: {
-        // For normal email confirmation, just go to main page
         emailRedirectTo: "https://tasksnacks.github.io/TaskSnacks/"
       }
     });
@@ -395,8 +357,6 @@ if (refreshBtn) {
 }
 
 // === PASSWORD RESET FLOW ===
-
-// 1. Change password: send email
 if (changePasswordBtn) {
   changePasswordBtn.addEventListener("click", async () => {
     if (!currentUser) {
@@ -433,16 +393,13 @@ if (changePasswordBtn) {
   });
 }
 
-// 2. Detect recovery mode from URL
 function handleRecoveryFromURL() {
   const hash = window.location.hash || "";
 
   if (hash.includes("recovery=1")) {
     isRecoveryMode = true;
 
-    if (passwordResetSection) {
-      passwordResetSection.style.display = "block";
-    }
+    if (passwordResetSection) passwordResetSection.style.display = "block";
     if (authStatus) {
       authStatus.textContent =
         "You opened a password reset link. Please set a new password.";
@@ -454,18 +411,15 @@ function handleRecoveryFromURL() {
         "",
         window.location.pathname + window.location.search
       );
-    } catch (e) {
+    } catch {
       // ignore
     }
   } else {
     isRecoveryMode = false;
-    if (passwordResetSection) {
-      passwordResetSection.style.display = "none";
-    }
+    if (passwordResetSection) passwordResetSection.style.display = "none";
   }
 }
 
-// 3. Handle "Update password" button
 if (setNewPasswordBtn) {
   setNewPasswordBtn.addEventListener("click", async () => {
     const newPass = newPasswordInput.value.trim();
@@ -512,10 +466,22 @@ function updateTodayLabel() {
   calendarTodayLabel.textContent = `Selected: ${formatted}`;
 }
 
-if (calendarToggleBtn && calendarInner) {
+// Collapsed by default
+if (calendarToggleBtn && calendarGrid) {
+  let isCalendarCollapsed = true;
+
+  calendarGrid.style.display = "none";
+  calendarToggleBtn.textContent = "Show calendar";
+
   calendarToggleBtn.addEventListener("click", () => {
-    const collapsed = calendarInner.classList.toggle("collapsed");
-    calendarToggleBtn.textContent = collapsed ? "Show calendar" : "Hide calendar";
+    isCalendarCollapsed = !isCalendarCollapsed;
+    if (isCalendarCollapsed) {
+      calendarGrid.style.display = "none";
+      calendarToggleBtn.textContent = "Show calendar";
+    } else {
+      calendarGrid.style.display = "grid";
+      calendarToggleBtn.textContent = "Hide calendar";
+    }
   });
 }
 
@@ -531,7 +497,6 @@ function setToday() {
 if (sortMode) {
   sortMode.addEventListener("change", () => {
     if (currentUser) loadTasksForSelectedDate();
-
     track("ts_sort_mode_changed", { mode: sortMode.value });
   });
 }
@@ -551,7 +516,7 @@ if (nextMonthBtn) {
 }
 
 async function renderCalendar() {
-  if (!currentUser) return;
+  if (!currentUser || !calendarGrid) return;
 
   const year = currentMonthDate.getFullYear();
   const month = currentMonthDate.getMonth();
@@ -606,12 +571,8 @@ async function renderCalendar() {
     cell.textContent = day;
     cell.dataset.date = dateStr;
 
-    if (datesWithTasks.has(dateStr)) {
-      cell.classList.add("has-tasks");
-    }
-    if (taskDateInput.value === dateStr) {
-      cell.classList.add("selected");
-    }
+    if (datesWithTasks.has(dateStr)) cell.classList.add("has-tasks");
+    if (taskDateInput.value === dateStr) cell.classList.add("selected");
 
     cell.addEventListener("click", () => {
       taskDateInput.value = dateStr;
@@ -718,7 +679,7 @@ async function handleDelete(task, div) {
   div.style.transform = "translateX(20px)";
 
   setTimeout(async () => {
-    if (currentUser) {
+    if (currentUser && !String(task.id).startsWith("preview-")) {
       await supabase.from("tasks").delete().eq("id", task.id);
       await saveTaskOrderToDatabase();
       await renderCalendar();
@@ -730,7 +691,7 @@ async function handleDelete(task, div) {
 
 // === Move task to another date ===
 function showMoveDateDialog(task) {
-  if (!currentUser) return;
+  if (!currentUser || String(task.id).startsWith("preview-")) return;
 
   const overlay = document.createElement("div");
   overlay.style.position = "fixed";
@@ -857,7 +818,7 @@ function renderTaskItem(task) {
   checkbox.type = "checkbox";
   checkbox.checked = !!task.completed;
   checkbox.addEventListener("change", async () => {
-    if (currentUser) {
+    if (currentUser && !String(task.id).startsWith("preview-")) {
       await supabase
         .from("tasks")
         .update({ completed: checkbox.checked })
@@ -882,7 +843,7 @@ function renderTaskItem(task) {
 
   function attachRename(labelEl) {
     labelEl.addEventListener("dblclick", () => {
-      if (!currentUser) return;
+      if (!currentUser || String(task.id).startsWith("preview-")) return;
 
       const currentText = labelEl.textContent || "";
       const input = document.createElement("input");
@@ -952,7 +913,7 @@ function renderTaskItem(task) {
   prioritySelect.addEventListener("change", async () => {
     const newPriority = prioritySelect.value;
 
-    if (currentUser) {
+    if (currentUser && !String(task.id).startsWith("preview-")) {
       await supabase
         .from("tasks")
         .update({ priority: newPriority })
@@ -983,7 +944,9 @@ function renderTaskItem(task) {
     const prev = div.previousElementSibling;
     if (prev && prev.classList.contains("task-item")) {
       tasksContainer.insertBefore(div, prev);
-      if (currentUser) saveTaskOrderToDatabase();
+      if (currentUser && !String(task.id).startsWith("preview-")) {
+        saveTaskOrderToDatabase();
+      }
     }
   });
 
@@ -995,7 +958,9 @@ function renderTaskItem(task) {
     const next = div.nextElementSibling;
     if (next && next.classList.contains("task-item")) {
       tasksContainer.insertBefore(next, div);
-      if (currentUser) saveTaskOrderToDatabase();
+      if (currentUser && !String(task.id).startsWith("preview-")) {
+        saveTaskOrderToDatabase();
+      }
     }
   });
 
@@ -1026,7 +991,9 @@ function renderTaskItem(task) {
   dragHandle.addEventListener("dragend", async () => {
     draggedTaskElement = null;
     div.classList.remove("dragging");
-    if (currentUser) await saveTaskOrderToDatabase();
+    if (currentUser && !String(task.id).startsWith("preview-")) {
+      await saveTaskOrderToDatabase();
+    }
   });
 
   // Mobile drag
@@ -1051,7 +1018,9 @@ function renderTaskItem(task) {
 
       draggedTaskElement = null;
       div.classList.remove("dragging");
-      if (currentUser) await saveTaskOrderToDatabase();
+      if (currentUser && !String(task.id).startsWith("preview-")) {
+        await saveTaskOrderToDatabase();
+      }
     };
 
     document.addEventListener("touchmove", handleMove, { passive: false });
@@ -1146,21 +1115,23 @@ async function addManualTask() {
   await renderCalendar();
 }
 
-manualAddBtn.addEventListener("click", addManualTask);
-manualTaskInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    addManualTask();
-  }
-});
+if (manualAddBtn) {
+  manualAddBtn.addEventListener("click", addManualTask);
+}
+if (manualTaskInput) {
+  manualTaskInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addManualTask();
+    }
+  });
+}
 
 // === ORGANIZE BUTTON (AI) ===
-// supports logged-in (saves) and logged-out preview (no saving)
 organizeBtn.addEventListener("click", async () => {
   const dumpText = brainDump.value.trim();
   if (!dumpText) return alert("Please type something first.");
 
-  // ensure we have some date even for preview
   if (!taskDateInput.value) {
     const today = new Date();
     taskDateInput.value = formatDateLocal(today);
@@ -1207,7 +1178,7 @@ organizeBtn.addEventListener("click", async () => {
     }
 
     if (!currentUser) {
-      // PREVIEW MODE: show tasks but do NOT save to DB
+      // PREVIEW MODE
       isPreviewMode = true;
       if (previewNote) previewNote.style.display = "block";
 
@@ -1225,7 +1196,7 @@ organizeBtn.addEventListener("click", async () => {
         renderTaskItem(previewTask);
       }
     } else {
-      // LOGGED-IN: save to Supabase
+      // LOGGED-IN MODE
       const existingItems = [
         ...tasksContainer.querySelectorAll(".task-item")
       ];
@@ -1277,13 +1248,11 @@ if (aboutBtn && aboutModal) {
     aboutModal.classList.remove("hidden");
   });
 }
-
 if (aboutCloseBtn) {
   aboutCloseBtn.addEventListener("click", () => {
     aboutModal.classList.add("hidden");
   });
 }
-
 if (aboutBackdrop) {
   aboutBackdrop.addEventListener("click", () => {
     aboutModal.classList.add("hidden");
@@ -1326,7 +1295,7 @@ if (deleteConfirmInput && finalDeleteBtn) {
   });
 }
 
-// Final delete click: call Edge Function (Supabase Function) named "delete-user"
+// Final delete click: call Supabase Edge Function named "delete-user"
 if (finalDeleteBtn) {
   finalDeleteBtn.addEventListener("click", async () => {
     if (!currentUser) {
