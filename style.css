@@ -156,10 +156,33 @@ h1 {
 
 .calendar-header {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;  /* nav on left, toggle on right */
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
+}
+
+/* group for prev / month / next */
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* toggle button in top-right */
+.calendar-toggle-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  background: #e5f6ff;
+  color: #0369a1;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.12);
+}
+
+.calendar-toggle-btn:hover {
+  filter: brightness(0.97);
 }
 
 .calendar-header button {
