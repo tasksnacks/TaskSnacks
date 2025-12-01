@@ -71,114 +71,93 @@
       </button>
     </div>
     
-    <!-- About section shown only when logged out -->
-    <div id="loggedOutInfo" class="logged-out-info" style="display:none;">
-      <h2>Welcome to TaskSnacks</h2>
-      <p>
-        Most productivity apps are packed with boards, labels, and complicated workflows.
-        TaskSnacks takes a different approach. It is built for people with busy schedules,
-        creative minds, or anyone who simply wants a calmer way to stay organized.
-      </p>
-      <p>
-        Just write your thoughts naturally. You can type fast, messy, out of order, with
-        spelling mistakes – it does not matter. TaskSnacks uses AI to instantly turn your
-        brain-dump into a small list of structured, clear tasks.
-      </p>
-      <p>
-        Each time you complete a task, you receive a tiny reward. It is a gentle,
-        dopamine-friendly nudge that helps you stay motivated without pressure.
-      </p>
-      <p>
-        Try it once without signing up. If you like how it feels, create an account to
-        save your tasks and keep your progress.
-      </p>
-    </div>
-    
-    <!-- Everything below is only visible when logged in OR in preview mode -->
-    <div id="appContent" style="display:none;">
+<!-- Everything below is only visible when logged in -->
+<div id="appContent" style="display:none;">
 
-      <!-- Calendar (collapsible) -->
-     <div id="calendarSection" class="calendar-section">
+  <!-- Calendar -->
+  <div id="calendarSection" class="calendar-section">
   <div class="calendar-header">
-    <button id="prevMonthBtn" type="button">‹</button>
-    <span id="calendarMonthLabel" class="calendar-month-label">Month Year</span>
-    <button id="nextMonthBtn" type="button">›</button>
-  </div>
-  <div class="calendar-toggle-row">
-    <button id="calendarToggleBtn" type="button">Hide calendar</button>
+    <div class="calendar-nav">
+      <button id="prevMonthBtn" type="button">‹</button>
+      <span id="calendarMonthLabel" class="calendar-month-label">Month Year</span>
+      <button id="nextMonthBtn" type="button">›</button>
+    </div>
+    <button id="calendarToggleBtn" type="button" class="calendar-toggle-btn">
+      Hide calendar
+    </button>
   </div>
   <div id="calendarGrid" class="calendar-grid"></div>
 </div>
 
-        <!-- These controls + grid are hidden when collapsed -->
-        <div id="calendarInner" class="calendar-inner collapsed">
-          <div class="calendar-header">
-            <button id="prevMonthBtn" type="button">‹</button>
-            <span id="calendarMonthLabel" class="calendar-month-label">Month Year</span>
-            <button id="nextMonthBtn" type="button">›</button>
-          </div>
-          <div id="calendarGrid" class="calendar-grid"></div>
-        </div>
-      </div>
+  <!-- Sort controls -->
+  <div id="sortSection" class="sort-section">
+    <label for="sortMode">Sort tasks:</label>
+    <select id="sortMode">
+      <option value="priority">By importance (High → Low)</option>
+      <option value="custom">My order</option>
+      <option value="created">By creation time</option>
+    </select>
+  </div>
 
-      <!-- Sort controls -->
-      <div id="sortSection" class="sort-section">
-        <label for="sortMode">Sort tasks:</label>
-        <select id="sortMode">
-          <option value="priority">By importance (High → Low)</option>
-          <option value="custom">My order</option>
-          <option value="created">By creation time</option>
-        </select>
-      </div>
+  <!-- Hidden date input used by JS -->
+  <input id="taskDate" type="date" style="display:none;" />
 
-      <!-- Hidden date input used by JS -->
-      <input id="taskDate" type="date" style="display:none;" />
+  <!-- Brain dump -->
+  <textarea
+    id="brainDump"
+    placeholder="Type everything on your mind..."
+  ></textarea>
+  <button id="organizeBtn" type="button">Organize My Mess</button>
 
-      <!-- Brain dump -->
-      <textarea
-        id="brainDump"
-        placeholder="Type everything on your mind..."
-      ></textarea>
-      <button id="organizeBtn" type="button">Organize My Mess</button>
+  <!-- Manual add -->
+  <div id="manualAddSection" class="manual-add">
+    <input
+      id="manualTaskInput"
+      type="text"
+      placeholder="Add a task manually..."
+    />
+    <button id="manualAddBtn" type="button">Add</button>
+  </div>
 
-      <!-- Manual add -->
-      <div id="manualAddSection" class="manual-add">
-        <input
-          id="manualTaskInput"
-          type="text"
-          placeholder="Add a task manually..."
-        />
-        <button id="manualAddBtn" type="button">Add</button>
-      </div>
+  <!-- Tasks + fun fact -->
+  <div id="tasksContainer"></div>
+  <div id="funFactContainer" class="fun-fact"></div>
 
-      <!-- Tasks + preview note + reward text -->
-      <div id="tasksContainer"></div>
+  <!-- Ko-fi (kept but hidden for now) -->
+  <div class="coffee" style="display:none;">
+    <a href="https://ko-fi.com/tasksnacks" target="_blank" rel="noopener">
+      Support TaskSnacks
+    </a>
+  </div>
 
-      <!-- Shown when user is NOT logged in but has generated tasks ("try-before-login") -->
-      <div
-        id="previewNote"
-        class="preview-note"
-        style="display:none; margin-top:8px; font-size:0.9rem;"
-      >
-        These tasks are in preview mode and are not saved. <br />
-        <strong>Sign up</strong> to keep them and unlock your progress over time.
-      </div>
+  <!-- Undo bar for delete -->
+  <div id="undoBar" class="undo-bar">
+    <span id="undoText">Task deleted</span>
+    <button id="undoBtn" type="button">Undo</button>
+  </div>
+</div> <!-- /#appContent -->
 
-      <div id="funFactContainer" class="fun-fact"></div>
-
-      <!-- Ko-fi (kept but hidden for now) -->
-      <div class="coffee" style="display:none;">
-        <a href="https://ko-fi.com/tasksnacks" target="_blank" rel="noopener">
-          Support TaskSnacks
-        </a>
-      </div>
-
-      <!-- Undo bar for delete -->
-      <div id="undoBar" class="undo-bar">
-        <span id="undoText">Task deleted</span>
-        <button id="undoBtn" type="button">Undo</button>
-      </div>
-    </div> <!-- /#appContent -->
+<!-- About section shown only when logged out -->
+<div id="loggedOutInfo" class="logged-out-info" style="display:none;">
+  <h2>Welcome to TaskSnacks</h2>
+  <p>
+    Most productivity apps are packed with boards, labels, and complicated workflows.
+    TaskSnacks takes a different approach. It is built for people with busy schedules,
+    creative minds, or anyone who simply wants a calmer way to stay organized.
+  </p>
+  <p>
+    Just write your thoughts naturally. You can type fast, messy, out of order, with
+    spelling mistakes, it does not matter. TaskSnacks uses AI to instantly turn your
+    brain-dump into a small list of structured, clear tasks.
+  </p>
+  <p>
+    Each time you complete a task, you receive a small fun fact. It is a gentle,
+    dopamine-friendly reward that helps you stay motivated without pressure.
+  </p>
+  <p>
+    Sign up to experience a lighter, simpler way of planning your day.
+  </p>
+</div> 
   </div> <!-- /.container -->
 
   <!-- About modal (visible whether logged in or not) -->
