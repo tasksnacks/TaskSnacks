@@ -50,6 +50,7 @@ const calendarGrid = document.getElementById("calendarGrid");
 const calendarMonthLabel = document.getElementById("calendarMonthLabel");
 const prevMonthBtn = document.getElementById("prevMonthBtn");
 const nextMonthBtn = document.getElementById("nextMonthBtn");
+const calendarToggleBtn = document.getElementById("calendarToggleBtn");
 const calendarTodayLabel = document.getElementById("calendarTodayLabel");
 const calendarToggleBtn = document.getElementById("calendarToggleBtn");
 const calendarInner = document.getElementById("calendarInner");
@@ -65,6 +66,26 @@ const appContent = document.getElementById("appContent");
 const loggedOutInfo = document.getElementById("loggedOutInfo");
 const refreshBtn = document.getElementById("refreshBtn");
 
+// --- CALENDAR TOGGLE (collapsed by default) ---
+if (calendarToggleBtn && calendarGrid) {
+  let isCalendarCollapsed = true;
+
+  // start hidden
+  calendarGrid.style.display = "none";
+  calendarToggleBtn.textContent = "Show calendar";
+
+  calendarToggleBtn.addEventListener("click", () => {
+    isCalendarCollapsed = !isCalendarCollapsed;
+
+    if (isCalendarCollapsed) {
+      calendarGrid.style.display = "none";
+      calendarToggleBtn.textContent = "Show calendar";
+    } else {
+      calendarGrid.style.display = "grid";
+      calendarToggleBtn.textContent = "Hide calendar";
+    }
+  });
+}
 // Settings + delete modal
 const settingsBtn = document.getElementById("settingsBtn");
 const settingsMenu = document.getElementById("settingsMenu");
