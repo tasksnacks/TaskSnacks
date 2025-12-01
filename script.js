@@ -278,6 +278,7 @@ function updateAuthUI() {
 
     emailInput.style.display = "none";
     passwordInput.style.display = "none";
+    if (tryAIPreviewHint) tryAIPreviewHint.style.display = "none";
 
     if (loggedOutInfo) loggedOutInfo.style.display = "none";
     if (hasCalendar) calendarSection.style.display = "block";
@@ -289,6 +290,7 @@ function updateAuthUI() {
     if (previewNote) previewNote.style.display = "none";
   } else {
     // LOGGED OUT → preview mode available
+    if (tryAIPreviewHint) tryAIPreviewHint.style.display = "block";
     authStatus.textContent = "Not logged in.";
     logoutBtn.style.display = "none";
     loginBtn.style.display = "inline-block";
