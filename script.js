@@ -117,6 +117,7 @@ function showReward() {
     !window.TaskSnacksRewards ||
     typeof window.TaskSnacksRewards.getRandomReward !== "function"
   ) {
+    console.warn("TaskSnacksRewards missing, using fallback reward.");
     funFactContainer.textContent = "✅ Nice job, task completed!";
     return;
   }
@@ -124,26 +125,31 @@ function showReward() {
   const reward = window.TaskSnacksRewards.getRandomReward();
   if (!reward) return;
 
-  // inline under the list
-  funFactContainer.textContent = reward.inlineText || reward.title || "Nice work!";
+  // inline text under the list
+  funFactContainer.textContent =
+    reward.inlineText || reward.title || "Nice work!";
 
-  // popup
+  // popup in the middle
   const popup = document.createElement("div");
   popup.className = "fun-fact-popup";
 
   let inner = `<strong>${reward.title || "Nice job"}</strong><br>`;
-  if (reward.body) inner += `${reward.body}<br>`;
+  if (reward.body) {
+    inner += `${reward.body}<br>`;
+  }
   if (reward.ascii) {
     inner += `<pre style="margin-top:8px; font-size:11px; line-height:1.1;">${reward.ascii}</pre>`;
   }
   popup.innerHTML = inner;
   document.body.appendChild(popup);
 
-  requestAnimationFrame(() => popup.classList.add("visible"));
+  requestAnimationFrame(() => {
+    popup.classList.add("visible");
+  });
 
   if (window.confetti && reward.confetti !== false) {
     window.confetti({
-      particleCount: 70,
+      particleCount: 80,
       spread: 70,
       origin: { y: 0.25 }
     });
