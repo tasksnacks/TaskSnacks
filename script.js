@@ -1465,9 +1465,11 @@ if (finalDeleteBtn) {
     finalDeleteBtn.textContent = "Deleting…";
 
     try {
-      const { data, error } = await supabase.functions.invoke("delete-user", {
-        method: "POST"
-      });
+      const { data, error } = await supabase.functions.invoke("smooth-action", {
+  // `invoke` already uses POST by default
+  // If your function expects JSON, send it like this:
+  body: { action: "delete-user" }
+});
 
       if (error) {
         console.error("Delete user error:", error);
