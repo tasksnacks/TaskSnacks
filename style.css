@@ -887,3 +887,22 @@ button#organizeBtn:disabled {
   justify-content: center;
   align-items: center;
 }
+
+.ts-footer {
+  margin-top: 60px;
+  padding: 20px 10px;
+  text-align: center;
+  font-size: 14px;
+  color: #4b5563; /* nice gray */
+  opacity: 0.8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ts-footer-logo {
+  width: 28px;
+  height: 28px;
+  opacity: 0.85;
+}
