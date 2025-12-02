@@ -1294,10 +1294,14 @@ organizeBtn.addEventListener("click", async () => {
   const date = taskDateInput.value;
 
   organizeBtn.disabled = true;
-  organizeBtn.textContent = "Organizing…";
-  funFactContainer.textContent = "";
-  hideUndoBar();
+organizeBtn.textContent = "Organizing…";
+funFactContainer.textContent = "";
+hideUndoBar();
+
+// Only clear the list in PREVIEW mode (logged out)
+if (!currentUser) {
   tasksContainer.innerHTML = "";
+}
 
   track("ts_organize_clicked", {
     text_length: dumpText.length,
