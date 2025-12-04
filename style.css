@@ -931,3 +931,20 @@ button#organizeBtn:disabled {
 .footer-email a:hover {
   text-decoration: underline;
 }
+
+.move-unfinished-btn {
+  margin-top: 4px;
+  margin-bottom: 8px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: none;
+  background: #e5f6ff;
+  color: #0369a1;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+}
+
+.move-unfinished-btn:hover {
+  filter: brightness(0.97);
+}
