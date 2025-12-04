@@ -207,6 +207,7 @@ const appContent = document.getElementById("appContent");
 const loggedOutInfo = document.getElementById("loggedOutInfo");
 const refreshBtn = document.getElementById("refreshBtn");
 const tryAIPreviewHint = document.getElementById("tryAIPreviewHint");
+const moveUnfinishedBtn = document.getElementById("moveUnfinishedBtn");
 
 // Settings + delete modal
 const settingsBtn = document.getElementById("settingsBtn");
@@ -508,7 +509,10 @@ if (refreshBtn) {
     location.reload();
   });
 }
-
+// Move unfinished tasks button
+if (moveUnfinishedBtn) {
+  moveUnfinishedBtn.addEventListener("click", moveUnfinishedToNextDay);
+}
 // === PASSWORD RESET FLOW ===
 if (changePasswordBtn) {
   changePasswordBtn.addEventListener("click", async () => {
@@ -1279,7 +1283,92 @@ if (manualTaskInput) {
     }
   });
 }
+// === Move to Next Day  ===
+async function moveUnfinishedToNextDay() {
+  if (!currentUser) {
+    alert("Please log in first.");
+    return;
+  }
 
+  const date = taskDateInput.value;
+  if (!date) {
+    alert("Please choose a day first.");
+    return;
+  }
+
+  // figure out tomorrow (using existing local date helper)
+  const current = new Date(date + "T00:00:00");
+  current.setDate(current.getDate() + 1);
+  const nextDate = formatDateLocal(current);
+
+  try {
+    // 1) get unfinished tasks for selected day
+    const { data: unfinished, error: unfinishedError } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .eq("task_date", date)
+      .eq("completed", false)
+      .order("sort_index", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    if (unfinishedError) {
+      console.error("Fetch unfinished error:", unfinishedError);
+      alert("Could not move tasks.");
+      return;
+    }
+
+    if (!unfinished || unfinished.length === 0) {
+      alert("No unfinished tasks to move for this day.");
+      return;
+    }
+
+    // 2) how many tasks already exist tomorrow?
+    const { data: tomorrowExisting, error: tomorrowError } = await supabase
+      .from("tasks")
+      .select("id")
+      .eq("user_id", currentUser.id)
+      .eq("task_date", nextDate);
+
+    if (tomorrowError) {
+      console.error("Fetch tomorrow tasks error:", tomorrowError);
+    }
+
+    let baseIndex = tomorrowExisting ? tomorrowExisting.length : 0;
+
+    // 3) update each unfinished task → tomorrow with new sort_index
+    const updates = unfinished.map((task, i) =>
+      supabase
+        .from("tasks")
+        .update({
+          task_date: nextDate,
+          sort_index: baseIndex + i
+        })
+        .eq("id", task.id)
+    );
+
+    await Promise.all(updates);
+
+    track("ts_move_unfinished_to_next_day", {
+      from: date,
+      to: nextDate,
+      count: unfinished.length
+    });
+
+    // 4) refresh current day + calendar UI
+    await loadTasksForSelectedDate();
+    await renderCalendar();
+
+    alert(
+      `Moved ${unfinished.length} unfinished task${
+        unfinished.length > 1 ? "s" : ""
+      } to ${nextDate}.`
+    );
+  } catch (err) {
+    console.error("Move unfinished exception:", err);
+    alert("Something went wrong while moving tasks.");
+  }
+}
 // === ORGANIZE BUTTON (AI) ===
 organizeBtn.addEventListener("click", async () => {
   const dumpText = brainDump.value.trim();
