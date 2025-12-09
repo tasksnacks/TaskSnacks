@@ -165,6 +165,21 @@ function track(eventName, props = {}) {
   }
 }
 
+// ---- Preview AI Limit (logged-out users) ----
+function getPreviewAICount() {
+  return parseInt(localStorage.getItem("ts_preview_ai_count") || "0", 10);
+}
+
+function incrementPreviewAICount() {
+  const count = getPreviewAICount();
+  localStorage.setItem("ts_preview_ai_count", String(count + 1));
+}
+
+function previewLimitReached() {
+  const count = getPreviewAICount();
+  return count >= 3; // change 3 to 2 if you only want 2 free runs
+}
+
 // --- Date helper (LOCAL date, fixes 1-day ahead bug) ---
 function formatDateLocal(d) {
   const year = d.getFullYear();
@@ -1374,6 +1389,16 @@ organizeBtn.addEventListener("click", async () => {
   const dumpText = brainDump.value.trim();
   if (!dumpText) return alert("Please type something first.");
 
+    // Limit free AI preview when user is logged out
+  if (!currentUser) {
+    if (previewLimitReached()) {
+      alert(
+        "You’ve reached the free preview limit.\nCreate a free account or log in to keep using TaskSnacks AI 😊"
+      );
+      return;
+    }
+  }
+
   if (!taskDateInput.value) {
     const today = new Date();
     taskDateInput.value = formatDateLocal(today);
@@ -1406,6 +1431,11 @@ if (!currentUser) {
 
     const data = await response.json();
     if (!data.ok) throw new Error(data.error || "Unknown error from worker.");
+
+        // Count successful AI preview calls for logged-out users
+    if (!currentUser) {
+      incrementPreviewAICount();
+    }
 
     const lines = data.tasksText
       .split("\n")
