@@ -177,7 +177,7 @@ function incrementPreviewAICount() {
 
 function previewLimitReached() {
   const count = getPreviewAICount();
-  return count >= 3; // change 3 to 2 if you only want 2 free runs
+  return count >= 2; // change 3 to 2 if you only want 2 free runs
 }
 
 // --- Date helper (LOCAL date, fixes 1-day ahead bug) ---
