@@ -149,12 +149,12 @@
 const workerUrl = "https://tasksnacks.hikarufujiart.workers.dev/";
 
 // Supabase config
-const supabaseUrl = "https://fxexewdnbmiybbutcnyv.supabaseClient.co";
+const supabaseUrl = "https://fxexewdnbmiybbutcnyv.supabase.co";
 const supabaseKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4ZXhld2RuYm1peWJidXRjbnl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1NTA2MjQsImV4cCI6MjA3OTEyNjYyNH0.E_UQHGX4zeLUajwMIlTRchsCMnr99__cDESOHflp8cc";
 
 // Supabase client
-const supabaseClient = window.supabaseClient.createClient(supabaseUrl, supabaseKey);
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 // ---- ANALYTICS (PostHog) ----
 const ENABLE_TRACKING = false;
@@ -380,11 +380,11 @@ function hideUndoBar() {
 // === AUTH LOGIC ===
 async function checkSession() {
   try {
-    const { data: sessionData } = await supabaseClient.auth.getSession();
+    const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData?.session || null;
 
     if (session) {
-      const { data: userData } = await supabaseClient.auth.getUser();
+      const { data: userData } = await supabase.auth.getUser();
       currentUser = userData?.user || null;
     } else {
       currentUser = null;
@@ -466,7 +466,7 @@ signupBtn.addEventListener("click", async () => {
   if (!email || !password) return alert("Email and password required.");
 
   try {
-    const { error } = await supabaseClient.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -492,7 +492,7 @@ loginBtn.addEventListener("click", async () => {
   const password = passwordInput.value.trim();
   if (!email || !password) return alert("Email and password required.");
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password
   });
@@ -511,7 +511,7 @@ loginBtn.addEventListener("click", async () => {
 });
 
 logoutBtn.addEventListener("click", async () => {
-  await supabaseClient.auth.signOut();
+  await supabase.auth.signOut();
   currentUser = null;
   isRecoveryMode = false;
   isPreviewMode = false;
@@ -542,7 +542,7 @@ if (changePasswordBtn) {
     if (!confirmChange) return;
 
     try {
-      const { error } = await supabaseClient.auth.resetPasswordForEmail(
+      const { error } = await supabase.auth.resetPasswordForEmail(
         currentUser.email,
         {
           redirectTo: "https://tasksnacks.github.io/TaskSnacks/#recovery=1"
@@ -601,7 +601,7 @@ if (setNewPasswordBtn) {
     }
 
     try {
-      const { error } = await supabaseClient.auth.updateUser({
+      const { error } = await supabase.auth.updateUser({
         password: newPass
       });
 
@@ -833,7 +833,7 @@ async function saveTaskOrderToDatabase() {
   const items = [...tasksContainer.querySelectorAll(".task-item")];
   const updates = items.map((item, index) => {
     const id = item.dataset.taskId;
-    return supabaseClient.from("tasks").update({ sort_index: index }).eq("id", id);
+    return supabase.from("tasks").update({ sort_index: index }).eq("id", id);
   });
   try {
     await Promise.all(updates);
@@ -852,7 +852,7 @@ async function handleDelete(task, div) {
 
   setTimeout(async () => {
     if (currentUser && !String(task.id).startsWith("preview-")) {
-      await supabaseClient.from("tasks").delete().eq("id", task.id);
+      await supabase.from("tasks").delete().eq("id", task.id);
       await saveTaskOrderToDatabase();
       await renderCalendar();
       showUndo(task);
@@ -1588,7 +1588,7 @@ if (finalDeleteBtn) {
     finalDeleteBtn.textContent = "Deleting…";
 
     try {
-      const { data, error } = await supabaseClient.functions.invoke("smooth-action", {
+      const { data, error } = await supabase.functions.invoke("smooth-action", {
   // `invoke` already uses POST by default
   // If your function expects JSON, send it like this:
   body: { action: "delete-user" }
@@ -1602,7 +1602,7 @@ if (finalDeleteBtn) {
         return;
       }
 
-      await supabaseClient.auth.signOut();
+      await supabase.auth.signOut();
       currentUser = null;
       updateAuthUI();
 
