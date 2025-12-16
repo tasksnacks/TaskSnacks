@@ -153,8 +153,20 @@ const supabaseUrl = "https://fxexewdnbmiybbutcnyv.supabase.co";
 const supabaseKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4ZXhld2RuYm1peWJidXRjbnl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1NTA2MjQsImV4cCI6MjA3OTEyNjYyNH0.E_UQHGX4zeLUajwMIlTRchsCMnr99__cDESOHflp8cc";
 
-// Supabase client
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+// Supabase client (safe init)
+if (!window.supabase || typeof window.supabase.createClient !== "function") {
+  console.error("Supabase failed to load. window.supabase=", window.supabase);
+  alert("Supabase failed to load. Please refresh the page.");
+  throw new Error("Supabase library missing");
+}
+
+// If script.js ever loads twice, `var` won't crash like `const`.
+// Also keep a single shared client on window.
+window.__TASKSNACKS_SUPABASE__ =
+  window.__TASKSNACKS_SUPABASE__ ||
+  window.supabase.createClient(supabaseUrl, supabaseKey);
+
+var supabase = window.__TASKSNACKS_SUPABASE__;
 
 // ---- ANALYTICS (PostHog) ----
 const ENABLE_TRACKING = false;
