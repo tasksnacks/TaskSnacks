@@ -62,6 +62,9 @@
     }
     fitCanvas();
 
+    // Keep canvas crisp on mobile orientation changes / resize
+    window.addEventListener("resize", fitCanvas);
+
     // -----------------------------
     // State
     // -----------------------------
@@ -772,7 +775,8 @@
     function drawHUD() {
       const isWhite = theme() === "white";
       const w = canvas.clientWidth || 960;
-
+// Mobile HUD: avoid overlapping pills
+const small = w < 420;
       const pad = 12;
       const top = 12;
 
@@ -786,15 +790,16 @@
       ctx.strokeStyle = isWhite ? "rgba(15,23,42,0.10)" : "rgba(255,255,255,0.12)";
       ctx.lineWidth = 1;
 
-      roundRect(pad, top, 260, 34, 14, true, true);
-
+      roundRect(pad, top, small ? (w - pad * 2) : 260, 34, 14, true, true);
       ctx.fillStyle = isWhite ? "rgba(15,23,42,0.90)" : "rgba(255,255,255,0.92)";
       ctx.font = "900 13px ui-sans-serif, system-ui";
       ctx.fillText(`Level ${state.level}  •  Score ${Math.floor(state.score)}  •  ${timerText}`, pad + 12, top + 22);
 
-      roundRect(w - 180 - pad, top, 180, 34, 14, true, true);
-      ctx.font = "900 13px ui-sans-serif, system-ui";
-      ctx.fillText(`Tap jump • K/↓ kick`, w - 180 - pad + 12, top + 22);
+      if (!small) {
+        roundRect(w - 180 - pad, top, 180, 34, 14, true, true);
+        ctx.font = "900 13px ui-sans-serif, system-ui";
+        ctx.fillText(`Tap jump • K/↓ kick`, w - 180 - pad + 12, top + 22);
+      }
 
       ctx.globalAlpha = 1;
     }
@@ -1052,6 +1057,7 @@
       setComfortMode(enabled) { state.comfortMode = !!enabled; },
       destroy() {
         state.alive = false;
+        window.removeEventListener("resize", fitCanvas);
         window.removeEventListener("keydown", onKeyDown);
         window.removeEventListener("keyup", onKeyUp);
         canvas.removeEventListener("pointerdown", onPointerDown);
