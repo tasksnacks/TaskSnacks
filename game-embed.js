@@ -51,7 +51,21 @@
     // -----------------------------
     function fitCanvas() {
       const cssW = canvas.clientWidth || 960;
-      const cssH = Math.round(cssW * (420 / 960));
+
+      // Phone-only: give the canvas real height (avoid tiny aspect-based height)
+      const isPhone = window.matchMedia && window.matchMedia("(max-width: 600px)").matches;
+
+      // Use visualViewport if available (better on iOS Safari)
+      const vpH = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
+
+      let cssH;
+      if (isPhone) {
+        // Big + playable but capped (prevents covering controls)
+        cssH = Math.round(Math.max(340, Math.min(vpH * 0.56, 520)));
+      } else {
+        cssH = Math.round(cssW * (420 / 960));
+      }
+
       canvas.style.height = cssH + "px";
 
       // Smooth DPR (avoid shimmer). Cap at 2 for perf.
@@ -64,6 +78,11 @@
 
     // Keep canvas crisp on mobile orientation changes / resize
     window.addEventListener("resize", fitCanvas);
+    window.addEventListener("orientationchange", fitCanvas);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", fitCanvas);
+      window.visualViewport.addEventListener("scroll", fitCanvas);
+    }
 
     // -----------------------------
     // State
@@ -273,6 +292,54 @@
       if (state.kickCooldown > 0) return;
       state.kickTimer = 0.18;
       state.kickCooldown = 0.35;
+    }
+
+    // Mobile controls (from index.html): JUMP + KICK buttons
+    const mobileJumpBtn = document.getElementById("mobileJumpBtn");
+    const mobileKickBtn = document.getElementById("mobileKickBtn");
+
+    if (mobileJumpBtn) {
+      mobileJumpBtn.addEventListener(
+        "pointerdown",
+        (e) => {
+          e.preventDefault();
+          if (!state.running) start();
+          if (state.gameOver) {
+            resetRun();
+            start();
+          } else {
+            jumpStart();
+          }
+        },
+        { passive: false }
+      );
+
+      mobileJumpBtn.addEventListener(
+        "pointerup",
+        () => {
+          jumpEnd();
+        },
+        { passive: true }
+      );
+
+      mobileJumpBtn.addEventListener(
+        "pointercancel",
+        () => {
+          jumpEnd();
+        },
+        { passive: true }
+      );
+    }
+
+    if (mobileKickBtn) {
+      mobileKickBtn.addEventListener(
+        "pointerdown",
+        (e) => {
+          e.preventDefault();
+          kick();
+        },
+        { passive: false }
+      );
     }
 
     function onKeyDown(e) {
@@ -625,7 +692,7 @@
         ctx.globalAlpha = 1;
       }
     }
-        function drawEnemyIcon(kind, x, y) {
+    function drawEnemyIcon(kind, x, y) {
       const isWhite = theme() === "white";
       const ink = isWhite ? "rgba(15,23,42,0.82)" : "rgba(255,255,255,0.88)";
       const fill = isWhite ? "rgba(15,23,42,0.10)" : "rgba(255,255,255,0.12)";
@@ -1058,6 +1125,11 @@ const small = w < 420;
       destroy() {
         state.alive = false;
         window.removeEventListener("resize", fitCanvas);
+        window.removeEventListener("orientationchange", fitCanvas);
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener("resize", fitCanvas);
+          window.visualViewport.removeEventListener("scroll", fitCanvas);
+        }
         window.removeEventListener("keydown", onKeyDown);
         window.removeEventListener("keyup", onKeyUp);
         canvas.removeEventListener("pointerdown", onPointerDown);
