@@ -55,40 +55,15 @@
     "You navigated your own brain today. That’s not easy."
   ];
 
-  // Simple ASCII using normal strings + \n
   const asciiAnimals = [
-    {
-      title: "Tiny cat",
-      ascii: " /\\_/\\\n( o.o )\n > ^ <"
-    },
-    {
-      title: "Sleepy snail",
-      ascii: "  __\n /o \\_____\n \\__/-=\"=\""
-    },
-    {
-      title: "Little duck",
-      ascii: "  _\n<(o )\n (   )\n  \" \""
-    },
-    {
-      title: "Tiny bear",
-      ascii: "ʕ•ᴥ•ʔ"
-    },
-    {
-      title: "Cheerful bunny",
-      ascii: " (\\_/)\n ( •_•)\n / >🍪"
-    },
-    {
-      title: "Minimal frog",
-      ascii: "  @..@\n (____)\n (____)\n  ^^  ^^"
-    },
-    {
-      title: "Tiny owl",
-      ascii: "  ,_,\n (O,O)\n (   )\n  \" \""
-    },
-    {
-      title: "Supportive blob",
-      ascii: "  _____\n (     )\n ( •_• )\n (_____)"  
-    }
+    { title: "Tiny cat", ascii: " /\\_/\\\n( o.o )\n > ^ <" },
+    { title: "Sleepy snail", ascii: "  __\n /o \\_____\n \\__/-=\"=\""},
+    { title: "Little duck", ascii: "  _\n<(o )\n (   )\n  \" \""},
+    { title: "Tiny bear", ascii: "ʕ•ᴥ•ʔ" },
+    { title: "Cheerful bunny", ascii: " (\\_/)\n ( •_•)\n / >🍪" },
+    { title: "Minimal frog", ascii: "  @..@\n (____)\n (____)\n  ^^  ^^" },
+    { title: "Tiny owl", ascii: "  ,_,\n (O,O)\n (   )\n  \" \"" },
+    { title: "Supportive blob", ascii: "  _____\n (     )\n ( •_• )\n (_____)" }
   ];
 
   function pick(arr) {
@@ -97,54 +72,28 @@
 
   function makeFunFactReward() {
     const fact = pick(funFacts);
-    return {
-      type: "fact",
-      title: "Fun fact",
-      body: fact,
-      inlineText: `🎉 Fun fact: ${fact}`,
-      confetti: true
-    };
+    return { type: "fact", title: "Fun fact", body: fact, inlineText: `🎉 Fun fact: ${fact}`, confetti: true };
   }
 
   function makeAffirmationReward() {
     const text = pick(affirmations);
-    return {
-      type: "affirmation",
-      title: "Nice work",
-      body: text,
-      inlineText: `✅ ${text}`,
-      confetti: true
-    };
+    return { type: "affirmation", title: "Nice work", body: text, inlineText: `✅ ${text}`, confetti: true };
   }
 
   function makeAsciiReward() {
     const animal = pick(asciiAnimals);
-    return {
-      type: "ascii",
-      title: animal.title,
-      body: "A tiny friend appears to celebrate:",
-      ascii: animal.ascii,
-      inlineText: `🐾 A tiny ${animal.title.toLowerCase()} came to say: well done.`,
-      confetti: Math.random() < 0.6
-    };
+    return { type: "ascii", title: animal.title, body: "A tiny friend appears to celebrate:", ascii: animal.ascii, inlineText: `🐾 A tiny ${animal.title.toLowerCase()} came to say: well done.`, confetti: Math.random() < 0.6 };
   }
 
   function getRandomReward() {
-    const pool = [
-      makeFunFactReward,
-      makeFunFactReward,
-      makeAffirmationReward,
-      makeAffirmationReward,
-      makeAsciiReward
-    ];
-    const gen = pick(pool);
-    return gen();
+    const pool = [makeFunFactReward, makeFunFactReward, makeAffirmationReward, makeAffirmationReward, makeAsciiReward];
+    return pick(pool)();
   }
 
-  // Safe attach
   window.TaskSnacksRewards = window.TaskSnacksRewards || {};
   window.TaskSnacksRewards.getRandomReward = getRandomReward;
 })();
+
 // === CONFIG ===
 const workerUrl = "https://tasksnacks.hikarufujiart.workers.dev/";
 
@@ -160,8 +109,6 @@ if (!window.supabase || typeof window.supabase.createClient !== "function") {
   throw new Error("Supabase library missing");
 }
 
-// If script.js ever loads twice, `var` won't crash like `const`.
-// Also keep a single shared client on window.
 window.__TASKSNACKS_SUPABASE__ =
   window.__TASKSNACKS_SUPABASE__ ||
   window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -181,15 +128,13 @@ function track(eventName, props = {}) {
 function getPreviewAICount() {
   return parseInt(localStorage.getItem("ts_preview_ai_count") || "0", 10);
 }
-
 function incrementPreviewAICount() {
   const count = getPreviewAICount();
   localStorage.setItem("ts_preview_ai_count", String(count + 1));
 }
-
 function previewLimitReached() {
   const count = getPreviewAICount();
-  return count >= 2; // change 3 to 2 if you only want 2 free runs
+  return count >= 2;
 }
 
 // --- Date helper (LOCAL date, fixes 1-day ahead bug) ---
@@ -235,6 +180,7 @@ const loggedOutInfo = document.getElementById("loggedOutInfo");
 const refreshBtn = document.getElementById("refreshBtn");
 const tryAIPreviewHint = document.getElementById("tryAIPreviewHint");
 const moveUnfinishedBtn = document.getElementById("moveUnfinishedBtn");
+const themeToggleBtn = document.getElementById("themeToggleBtn");
 
 // Settings + delete modal
 const settingsBtn = document.getElementById("settingsBtn");
@@ -262,12 +208,28 @@ const aboutBackdrop = document.getElementById("aboutBackdrop");
 // === STATE ===
 let currentUser = null;
 let currentMonthDate = new Date();
+let selectedDate = new Date();
 let draggedTaskElement = null;
 let lastDeletedTask = null;
 let undoTimeoutId = null;
 let isRecoveryMode = false;
-let isPreviewMode = false; // for try-before-login
+let isPreviewMode = false;
 
+// === Date formatting for header ===
+const pad2 = (n) => String(n).padStart(2, "0");
+const formatDDMMYYYY = (d) =>
+  `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;
+
+// ✅ Central date setter (does NOT rely on a 'change' event)
+function setSelectedDate(d) {
+  selectedDate = new Date(d);
+
+  const iso = formatDateLocal(selectedDate);
+  if (taskDateInput) taskDateInput.value = iso;
+
+  // Keep month view anchored to selected day
+  currentMonthDate = new Date(selectedDate);
+}
 // === SETTINGS DROPDOWN ===
 if (settingsBtn && settingsMenu) {
   settingsBtn.addEventListener("click", (e) => {
@@ -286,7 +248,7 @@ if (settingsBtn && settingsMenu) {
   });
 }
 
-// === REWARD DISPLAY (uses rewards.js) ===
+// === REWARD DISPLAY ===
 function showReward() {
   if (
     !window.TaskSnacksRewards ||
@@ -300,27 +262,21 @@ function showReward() {
   const reward = window.TaskSnacksRewards.getRandomReward();
   if (!reward) return;
 
-  // inline text under the list
   funFactContainer.textContent =
     reward.inlineText || reward.title || "Nice work!";
 
-  // popup in the middle
   const popup = document.createElement("div");
   popup.className = "fun-fact-popup";
 
   let inner = `<strong>${reward.title || "Nice job"}</strong><br>`;
-  if (reward.body) {
-    inner += `${reward.body}<br>`;
-  }
+  if (reward.body) inner += `${reward.body}<br>`;
   if (reward.ascii) {
     inner += `<pre style="margin-top:8px; font-size:11px; line-height:1.1;">${reward.ascii}</pre>`;
   }
   popup.innerHTML = inner;
   document.body.appendChild(popup);
 
-  requestAnimationFrame(() => {
-    popup.classList.add("visible");
-  });
+  requestAnimationFrame(() => popup.classList.add("visible"));
 
   if (window.confetti && reward.confetti !== false) {
     window.confetti({
@@ -421,7 +377,6 @@ function updateAuthUI() {
   const hasManual = !!manualAddSection;
 
   if (currentUser) {
-    // LOGGED IN
     authStatus.textContent = `Logged in as ${currentUser.email}`;
     logoutBtn.style.display = "inline-block";
     loginBtn.style.display = "none";
@@ -440,7 +395,6 @@ function updateAuthUI() {
     if (tryAIPreviewHint) tryAIPreviewHint.style.display = "none";
     if (previewNote) previewNote.style.display = "none";
   } else {
-    // LOGGED OUT
     authStatus.textContent = "Not logged in.";
     logoutBtn.style.display = "none";
     loginBtn.style.display = "inline-block";
@@ -450,7 +404,6 @@ function updateAuthUI() {
     passwordInput.style.display = "inline-block";
 
     if (loggedOutInfo) loggedOutInfo.style.display = "block";
-
     if (hasCalendar) calendarSection.style.display = "none";
     if (hasSort) sortSection.style.display = "none";
     if (hasManual) manualAddSection.style.display = "none";
@@ -481,9 +434,7 @@ signupBtn.addEventListener("click", async () => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        emailRedirectTo: "https://tasksnacks.github.io/TaskSnacks/"
-      }
+      options: { emailRedirectTo: "https://tasksnacks.github.io/TaskSnacks/" }
     });
 
     if (error) {
@@ -504,21 +455,17 @@ loginBtn.addEventListener("click", async () => {
   const password = passwordInput.value.trim();
   if (!email || !password) return alert("Email and password required.");
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
-
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return alert("Login error: " + error.message);
 
   currentUser = data.user;
   isRecoveryMode = false;
   isPreviewMode = false;
   updateAuthUI();
+
   setToday();
   await loadTasksForSelectedDate();
   await renderCalendar();
-
   track("ts_login_success");
 });
 
@@ -531,35 +478,22 @@ logoutBtn.addEventListener("click", async () => {
 });
 
 // Refresh button
-if (refreshBtn) {
-  refreshBtn.addEventListener("click", () => {
-    location.reload();
-  });
-}
+if (refreshBtn) refreshBtn.addEventListener("click", () => location.reload());
+
 // Move unfinished tasks button
-if (moveUnfinishedBtn) {
-  moveUnfinishedBtn.addEventListener("click", moveUnfinishedToNextDay);
-}
+if (moveUnfinishedBtn) moveUnfinishedBtn.addEventListener("click", moveUnfinishedToNextDay);
 // === PASSWORD RESET FLOW ===
 if (changePasswordBtn) {
   changePasswordBtn.addEventListener("click", async () => {
-    if (!currentUser) {
-      alert("Please log in first.");
-      return;
-    }
+    if (!currentUser) return alert("Please log in first.");
 
-    const confirmChange = confirm(
-      "We will send a password reset email to your address. Continue?"
-    );
+    const confirmChange = confirm("We will send a password reset email to your address. Continue?");
     if (!confirmChange) return;
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        currentUser.email,
-        {
-          redirectTo: "https://tasksnacks.github.io/TaskSnacks/#recovery=1"
-        }
-      );
+      const { error } = await supabase.auth.resetPasswordForEmail(currentUser.email, {
+        redirectTo: "https://tasksnacks.github.io/TaskSnacks/#recovery=1"
+      });
 
       if (error) {
         console.error("Reset password error:", error);
@@ -590,11 +524,7 @@ function handleRecoveryFromURL() {
     }
 
     try {
-      history.replaceState(
-        null,
-        "",
-        window.location.pathname + window.location.search
-      );
+      history.replaceState(null, "", window.location.pathname + window.location.search);
     } catch {
       // ignore
     }
@@ -607,15 +537,10 @@ function handleRecoveryFromURL() {
 if (setNewPasswordBtn) {
   setNewPasswordBtn.addEventListener("click", async () => {
     const newPass = newPasswordInput.value.trim();
-    if (!newPass) {
-      alert("Please type a new password.");
-      return;
-    }
+    if (!newPass) return alert("Please type a new password.");
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPass
-      });
+      const { error } = await supabase.auth.updateUser({ password: newPass });
 
       if (error) {
         console.error("Update password error:", error);
@@ -650,21 +575,39 @@ function updateTodayLabel() {
   calendarTodayLabel.textContent = `Selected: ${formatted}`;
 }
 
+function isCalendarCollapsedNow() {
+  return !calendarGrid || calendarGrid.style.display === "none";
+}
+
+function updateCalendarHeaderLabel(year, month) {
+  if (!calendarMonthLabel) return;
+  if (isCalendarCollapsedNow()) {
+    calendarMonthLabel.textContent = formatDDMMYYYY(selectedDate);
+  } else {
+    const monthName = new Date(year, month, 1).toLocaleString(undefined, { month: "long" });
+    calendarMonthLabel.textContent = `${monthName} ${year}`;
+  }
+}
+
 // Collapsed by default
 if (calendarToggleBtn && calendarGrid) {
-  let isCalendarCollapsed = true;
-
   calendarGrid.style.display = "none";
   calendarToggleBtn.textContent = "Show calendar";
 
   calendarToggleBtn.addEventListener("click", () => {
-    isCalendarCollapsed = !isCalendarCollapsed;
-    if (isCalendarCollapsed) {
-      calendarGrid.style.display = "none";
-      calendarToggleBtn.textContent = "Show calendar";
-    } else {
+    const collapsed = isCalendarCollapsedNow();
+
+    if (collapsed) {
+      // open
       calendarGrid.style.display = "grid";
       calendarToggleBtn.textContent = "Hide calendar";
+      currentMonthDate = new Date(selectedDate);
+      renderCalendar();
+    } else {
+      // close
+      calendarGrid.style.display = "none";
+      calendarToggleBtn.textContent = "Show calendar";
+      if (calendarMonthLabel) calendarMonthLabel.textContent = formatDDMMYYYY(selectedDate);
     }
   });
 }
@@ -672,30 +615,45 @@ if (calendarToggleBtn && calendarGrid) {
 // === DATE & CALENDAR HANDLING ===
 function setToday() {
   const today = new Date();
-  const todayStr = formatDateLocal(today);
-  taskDateInput.value = todayStr;
-  currentMonthDate = today;
+  setSelectedDate(today);
   updateTodayLabel();
+  if (calendarMonthLabel && isCalendarCollapsedNow()) {
+    calendarMonthLabel.textContent = formatDDMMYYYY(selectedDate);
+  }
 }
 
-if (sortMode) {
-  sortMode.addEventListener("change", () => {
-    if (currentUser) loadTasksForSelectedDate();
-    track("ts_sort_mode_changed", { mode: sortMode.value });
-  });
-}
-
+// === Day navigation (← / → buttons) ===
 if (prevMonthBtn) {
-  prevMonthBtn.addEventListener("click", () => {
-    currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
-    renderCalendar();
+  prevMonthBtn.addEventListener("click", async () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(d);
+
+    updateTodayLabel();
+    await loadTasksForSelectedDate();
+
+    if (!isCalendarCollapsedNow()) {
+      await renderCalendar();
+    } else if (calendarMonthLabel) {
+      calendarMonthLabel.textContent = formatDDMMYYYY(selectedDate);
+    }
   });
 }
 
 if (nextMonthBtn) {
-  nextMonthBtn.addEventListener("click", () => {
-    currentMonthDate.setMonth(currentMonthDate.getMonth() + 1);
-    renderCalendar();
+  nextMonthBtn.addEventListener("click", async () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    setSelectedDate(d);
+
+    updateTodayLabel();
+    await loadTasksForSelectedDate();
+
+    if (!isCalendarCollapsedNow()) {
+      await renderCalendar();
+    } else if (calendarMonthLabel) {
+      calendarMonthLabel.textContent = formatDDMMYYYY(selectedDate);
+    }
   });
 }
 
@@ -705,10 +663,7 @@ async function renderCalendar() {
   const year = currentMonthDate.getFullYear();
   const month = currentMonthDate.getMonth();
 
-  calendarMonthLabel.textContent = currentMonthDate.toLocaleDateString(
-    undefined,
-    { month: "long", year: "numeric" }
-  );
+  updateCalendarHeaderLabel(year, month);
 
   const first = new Date(year, month, 1);
   const firstDay = (first.getDay() + 6) % 7; // Monday = 0
@@ -725,9 +680,7 @@ async function renderCalendar() {
     .gte("task_date", monthStart)
     .lte("task_date", monthEnd);
 
-  if (error) {
-    console.error("Calendar query error:", error);
-  }
+  if (error) console.error("Calendar query error:", error);
 
   const datesWithTasks = new Set((data || []).map((row) => row.task_date));
 
@@ -746,6 +699,8 @@ async function renderCalendar() {
     calendarGrid.appendChild(empty);
   }
 
+  const selectedIso = taskDateInput?.value || formatDateLocal(selectedDate);
+
   for (let day = 1; day <= daysInMonth; day++) {
     const dateObj = new Date(year, month, day);
     const dateStr = formatDateLocal(dateObj);
@@ -756,16 +711,20 @@ async function renderCalendar() {
     cell.dataset.date = dateStr;
 
     if (datesWithTasks.has(dateStr)) cell.classList.add("has-tasks");
-    if (taskDateInput.value === dateStr) cell.classList.add("selected");
+    if (selectedIso === dateStr) cell.classList.add("selected");
 
-    cell.addEventListener("click", () => {
-      taskDateInput.value = dateStr;
+    cell.addEventListener("click", async () => {
+      setSelectedDate(new Date(dateStr + "T00:00:00"));
       updateTodayLabel();
-      loadTasksForSelectedDate();
+      await loadTasksForSelectedDate();
+
       document
         .querySelectorAll(".cal-day.selected")
         .forEach((el) => el.classList.remove("selected"));
       cell.classList.add("selected");
+
+      // keep header correct while open
+      updateCalendarHeaderLabel(currentMonthDate.getFullYear(), currentMonthDate.getMonth());
     });
 
     calendarGrid.appendChild(cell);
@@ -798,14 +757,11 @@ async function loadTasksForSelectedDate() {
 
   if (sortMode && sortMode.value === "priority") {
     const order = { high: 0, medium: 1, low: 2 };
-    tasks.sort(
-      (a, b) => (order[a.priority] ?? 3) - (order[b.priority] ?? 3)
-    );
+    tasks.sort((a, b) => (order[a.priority] ?? 3) - (order[b.priority] ?? 3));
   }
 
   tasks.forEach((task) => renderTaskItem(task));
 }
-
 // === DRAG & DROP CONTAINER HANDLING ===
 tasksContainer.addEventListener("dragover", (e) => {
   e.preventDefault();
@@ -849,9 +805,7 @@ async function saveTaskOrderToDatabase() {
   });
   try {
     await Promise.all(updates);
-    if (sortMode) {
-      sortMode.value = "created";
-    }
+    if (sortMode) sortMode.value = "created";
   } catch (e) {
     console.error("Error saving order:", e);
   }
@@ -896,9 +850,7 @@ function showMoveDateDialog(task) {
   box.style.minWidth = "260px";
   box.style.maxWidth = "90%";
   box.style.boxShadow = "0 18px 40px rgba(15,23,42,0.35)";
-  box.innerHTML = `
-    <div style="font-weight:600; margin-bottom:8px; font-size:15px;">Move task to…</div>
-  `;
+  box.innerHTML = `<div style="font-weight:600; margin-bottom:8px; font-size:15px;">Move task to…</div>`;
 
   const dateInput = document.createElement("input");
   dateInput.type = "date";
@@ -921,9 +873,7 @@ function showMoveDateDialog(task) {
   cancelBtn.style.padding = "6px 12px";
   cancelBtn.style.background = "#e5e7eb";
   cancelBtn.style.cursor = "pointer";
-  cancelBtn.onclick = () => {
-    document.body.removeChild(overlay);
-  };
+  cancelBtn.onclick = () => document.body.removeChild(overlay);
 
   const moveBtn = document.createElement("button");
   moveBtn.textContent = "Move";
@@ -957,10 +907,7 @@ function showMoveDateDialog(task) {
         .update({ task_date: newDate, sort_index: newIndex })
         .eq("id", task.id);
 
-      track("ts_task_moved_day", {
-        from: task.task_date,
-        to: newDate
-      });
+      track("ts_task_moved_day", { from: task.task_date, to: newDate });
 
       await loadTasksForSelectedDate();
       await renderCalendar();
@@ -1003,15 +950,10 @@ function renderTaskItem(task) {
   checkbox.checked = !!task.completed;
   checkbox.addEventListener("change", async () => {
     if (currentUser && !String(task.id).startsWith("preview-")) {
-      await supabase
-        .from("tasks")
-        .update({ completed: checkbox.checked })
-        .eq("id", task.id);
+      await supabase.from("tasks").update({ completed: checkbox.checked }).eq("id", task.id);
     }
 
-    if (checkbox.checked) {
-      showReward();
-    }
+    if (checkbox.checked) showReward();
 
     track("ts_task_completed_toggle", {
       completed: checkbox.checked,
@@ -1056,10 +998,7 @@ function renderTaskItem(task) {
         input.replaceWith(newLabel);
 
         if (save && newText && newText !== currentText && currentUser) {
-          await supabase
-            .from("tasks")
-            .update({ task_text: newText })
-            .eq("id", task.id);
+          await supabase.from("tasks").update({ task_text: newText }).eq("id", task.id);
         }
       };
 
@@ -1098,10 +1037,7 @@ function renderTaskItem(task) {
     const newPriority = prioritySelect.value;
 
     if (currentUser && !String(task.id).startsWith("preview-")) {
-      await supabase
-        .from("tasks")
-        .update({ priority: newPriority })
-        .eq("id", task.id);
+      await supabase.from("tasks").update({ priority: newPriority }).eq("id", task.id);
     }
 
     div.classList.remove("high", "medium", "low");
@@ -1116,9 +1052,7 @@ function renderTaskItem(task) {
   moveDateBtn.textContent = "📆";
   moveDateBtn.title = "Move to another day";
   moveDateBtn.className = "task-move-date";
-  moveDateBtn.addEventListener("click", () => {
-    showMoveDateDialog(task);
-  });
+  moveDateBtn.addEventListener("click", () => showMoveDateDialog(task));
 
   const upBtn = document.createElement("button");
   upBtn.textContent = "↑";
@@ -1128,9 +1062,7 @@ function renderTaskItem(task) {
     const prev = div.previousElementSibling;
     if (prev && prev.classList.contains("task-item")) {
       tasksContainer.insertBefore(div, prev);
-      if (currentUser && !String(task.id).startsWith("preview-")) {
-        saveTaskOrderToDatabase();
-      }
+      if (currentUser && !String(task.id).startsWith("preview-")) saveTaskOrderToDatabase();
     }
   });
 
@@ -1142,9 +1074,7 @@ function renderTaskItem(task) {
     const next = div.nextElementSibling;
     if (next && next.classList.contains("task-item")) {
       tasksContainer.insertBefore(next, div);
-      if (currentUser && !String(task.id).startsWith("preview-")) {
-        saveTaskOrderToDatabase();
-      }
+      if (currentUser && !String(task.id).startsWith("preview-")) saveTaskOrderToDatabase();
     }
   });
 
@@ -1152,9 +1082,7 @@ function renderTaskItem(task) {
   deleteBtn.textContent = "✕";
   deleteBtn.title = "Delete task";
   deleteBtn.className = "task-delete";
-  deleteBtn.addEventListener("click", () => {
-    handleDelete(task, div);
-  });
+  deleteBtn.addEventListener("click", () => handleDelete(task, div));
 
   controls.appendChild(prioritySelect);
   controls.appendChild(moveDateBtn);
@@ -1166,7 +1094,6 @@ function renderTaskItem(task) {
   div.appendChild(controls);
   tasksContainer.appendChild(div);
 
-  // Desktop drag
   dragHandle.draggable = true;
   dragHandle.addEventListener("dragstart", () => {
     draggedTaskElement = div;
@@ -1175,74 +1102,32 @@ function renderTaskItem(task) {
   dragHandle.addEventListener("dragend", async () => {
     draggedTaskElement = null;
     div.classList.remove("dragging");
-    if (currentUser && !String(task.id).startsWith("preview-")) {
-      await saveTaskOrderToDatabase();
-    }
+    if (currentUser && !String(task.id).startsWith("preview-")) await saveTaskOrderToDatabase();
   });
 
-  // Mobile drag
-  dragHandle.addEventListener("touchstart", (e) => {
-    if (e.touches.length !== 1) return;
-    e.preventDefault();
-
-    draggedTaskElement = div;
-    div.classList.add("dragging");
-
-    const handleMove = (ev) => {
-      const t = ev.touches[0] || ev.changedTouches[0];
-      if (!t) return;
-      reorderTasksAtY(t.clientY);
-      ev.preventDefault();
-    };
-
-    const handleEnd = async () => {
-      document.removeEventListener("touchmove", handleMove);
-      document.removeEventListener("touchend", handleEnd);
-      document.removeEventListener("touchcancel", handleEnd);
-
-      draggedTaskElement = null;
-      div.classList.remove("dragging");
-      if (currentUser && !String(task.id).startsWith("preview-")) {
-        await saveTaskOrderToDatabase();
-      }
-    };
-
-    document.addEventListener("touchmove", handleMove, { passive: false });
-    document.addEventListener("touchend", handleEnd);
-    document.addEventListener("touchcancel", handleEnd);
-  });
-
-  // Swipe-to-delete
+  // Swipe-to-delete (mobile)
   let touchStartX = null;
   let touchCurrentX = null;
   let isSwiping = false;
 
-  div.addEventListener(
-    "touchstart",
-    (e) => {
-      if (e.touches.length !== 1) return;
-      touchStartX = e.touches[0].clientX;
-      touchCurrentX = touchStartX;
-      isSwiping = true;
-    },
-    { passive: true }
-  );
+  div.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1) return;
+    touchStartX = e.touches[0].clientX;
+    touchCurrentX = touchStartX;
+    isSwiping = true;
+  }, { passive: true });
 
-  div.addEventListener(
-    "touchmove",
-    (e) => {
-      if (!isSwiping) return;
-      touchCurrentX = e.touches[0].clientX;
-      const deltaX = touchCurrentX - touchStartX;
+  div.addEventListener("touchmove", (e) => {
+    if (!isSwiping) return;
+    touchCurrentX = e.touches[0].clientX;
+    const deltaX = touchCurrentX - touchStartX;
 
-      if (deltaX < 0) {
-        div.style.transform = `translateX(${deltaX}px)`;
-        const opacity = Math.max(0.3, 1 + deltaX / 200);
-        div.style.opacity = String(opacity);
-      }
-    },
-    { passive: true }
-  );
+    if (deltaX < 0) {
+      div.style.transform = `translateX(${deltaX}px)`;
+      const opacity = Math.max(0.3, 1 + deltaX / 200);
+      div.style.opacity = String(opacity);
+    }
+  }, { passive: true });
 
   div.addEventListener("touchend", () => {
     if (!isSwiping) return;
@@ -1267,9 +1152,7 @@ async function addManualTask() {
   const date = taskDateInput.value;
   if (!date) return alert("Please choose a date.");
 
-  const existingItems = [
-    ...tasksContainer.querySelectorAll(".task-item")
-  ];
+  const existingItems = [...tasksContainer.querySelectorAll(".task-item")];
   const baseIndex = existingItems.length;
 
   const { data, error } = await supabase
@@ -1299,9 +1182,7 @@ async function addManualTask() {
   await renderCalendar();
 }
 
-if (manualAddBtn) {
-  manualAddBtn.addEventListener("click", addManualTask);
-}
+if (manualAddBtn) manualAddBtn.addEventListener("click", addManualTask);
 if (manualTaskInput) {
   manualTaskInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
@@ -1310,26 +1191,19 @@ if (manualTaskInput) {
     }
   });
 }
-// === Move to Next Day  ===
+
+// === Move to Next Day ===
 async function moveUnfinishedToNextDay() {
-  if (!currentUser) {
-    alert("Please log in first.");
-    return;
-  }
+  if (!currentUser) return alert("Please log in first.");
 
   const date = taskDateInput.value;
-  if (!date) {
-    alert("Please choose a day first.");
-    return;
-  }
+  if (!date) return alert("Please choose a day first.");
 
-  // figure out tomorrow (using existing local date helper)
   const current = new Date(date + "T00:00:00");
   current.setDate(current.getDate() + 1);
   const nextDate = formatDateLocal(current);
 
   try {
-    // 1) get unfinished tasks for selected day
     const { data: unfinished, error: unfinishedError } = await supabase
       .from("tasks")
       .select("*")
@@ -1350,89 +1224,60 @@ async function moveUnfinishedToNextDay() {
       return;
     }
 
-    // 2) how many tasks already exist tomorrow?
     const { data: tomorrowExisting, error: tomorrowError } = await supabase
       .from("tasks")
       .select("id")
       .eq("user_id", currentUser.id)
       .eq("task_date", nextDate);
 
-    if (tomorrowError) {
-      console.error("Fetch tomorrow tasks error:", tomorrowError);
-    }
+    if (tomorrowError) console.error("Fetch tomorrow tasks error:", tomorrowError);
 
     let baseIndex = tomorrowExisting ? tomorrowExisting.length : 0;
 
-    // 3) update each unfinished task → tomorrow with new sort_index
     const updates = unfinished.map((task, i) =>
       supabase
         .from("tasks")
-        .update({
-          task_date: nextDate,
-          sort_index: baseIndex + i
-        })
+        .update({ task_date: nextDate, sort_index: baseIndex + i })
         .eq("id", task.id)
     );
 
     await Promise.all(updates);
 
-    track("ts_move_unfinished_to_next_day", {
-      from: date,
-      to: nextDate,
-      count: unfinished.length
-    });
+    track("ts_move_unfinished_to_next_day", { from: date, to: nextDate, count: unfinished.length });
 
-    // 4) refresh current day + calendar UI
     await loadTasksForSelectedDate();
     await renderCalendar();
 
-    alert(
-      `Moved ${unfinished.length} unfinished task${
-        unfinished.length > 1 ? "s" : ""
-      } to ${nextDate}.`
-    );
+    alert(`Moved ${unfinished.length} unfinished task${unfinished.length > 1 ? "s" : ""} to ${nextDate}.`);
   } catch (err) {
     console.error("Move unfinished exception:", err);
     alert("Something went wrong while moving tasks.");
   }
 }
+
 // === ORGANIZE BUTTON (AI) ===
 organizeBtn.addEventListener("click", async () => {
   const dumpText = brainDump.value.trim();
   if (!dumpText) return alert("Please type something first.");
 
-    // Limit free AI preview when user is logged out
-  if (!currentUser) {
-    if (previewLimitReached()) {
-      alert(
-        "You’ve reached the free preview limit.\nCreate a free account or log in to keep using TaskSnacks AI 😊"
-      );
-      return;
-    }
+  if (!currentUser && previewLimitReached()) {
+    alert("You’ve reached the free preview limit.\nCreate a free account or log in to keep using TaskSnacks AI 😊");
+    return;
   }
 
-  if (!taskDateInput.value) {
-    const today = new Date();
-    taskDateInput.value = formatDateLocal(today);
-  }
+  if (!taskDateInput.value) setSelectedDate(new Date());
   updateTodayLabel();
 
   const date = taskDateInput.value;
 
   organizeBtn.disabled = true;
-organizeBtn.textContent = "Organizing…";
-funFactContainer.textContent = "";
-hideUndoBar();
+  organizeBtn.textContent = "Organizing…";
+  funFactContainer.textContent = "";
+  hideUndoBar();
 
-// Only clear the list in PREVIEW mode (logged out)
-if (!currentUser) {
-  tasksContainer.innerHTML = "";
-}
+  if (!currentUser) tasksContainer.innerHTML = "";
 
-  track("ts_organize_clicked", {
-    text_length: dumpText.length,
-    logged_in: !!currentUser
-  });
+  track("ts_organize_clicked", { text_length: dumpText.length, logged_in: !!currentUser });
 
   try {
     const response = await fetch(workerUrl, {
@@ -1444,29 +1289,18 @@ if (!currentUser) {
     const data = await response.json();
     if (!data.ok) throw new Error(data.error || "Unknown error from worker.");
 
-        // Count successful AI preview calls for logged-out users
-    if (!currentUser) {
-      incrementPreviewAICount();
-    }
+    if (!currentUser) incrementPreviewAICount();
 
-    const lines = data.tasksText
-      .split("\n")
-      .filter((line) => line.trim().startsWith("-"));
+    const lines = data.tasksText.split("\n").filter((line) => line.trim().startsWith("-"));
 
     const parsedTasks = [];
     for (const line of lines) {
       const trimmed = line.replace(/^-\s*/, "");
       const match = trimmed.match(/^\[(High|Medium|Low)\]\s*(.+)$/i);
-      if (match) {
-        parsedTasks.push({
-          priority: match[1].toLowerCase(),
-          text: match[2]
-        });
-      }
+      if (match) parsedTasks.push({ priority: match[1].toLowerCase(), text: match[2] });
     }
 
     if (!currentUser) {
-      // PREVIEW MODE
       isPreviewMode = true;
       if (previewNote) previewNote.style.display = "block";
 
@@ -1484,10 +1318,7 @@ if (!currentUser) {
         renderTaskItem(previewTask);
       }
     } else {
-      // LOGGED-IN MODE
-      const existingItems = [
-        ...tasksContainer.querySelectorAll(".task-item")
-      ];
+      const existingItems = [...tasksContainer.querySelectorAll(".task-item")];
       let baseIndex = existingItems.length;
 
       for (const t of parsedTasks) {
@@ -1505,11 +1336,7 @@ if (!currentUser) {
           .single();
 
         if (!error && inserted) {
-          track("ts_task_created", {
-            source: "ai",
-            priority: t.priority
-          });
-
+          track("ts_task_created", { source: "ai", priority: t.priority });
           renderTaskItem(inserted);
           baseIndex += 1;
         }
@@ -1531,29 +1358,14 @@ if (!currentUser) {
 });
 
 // === ABOUT MODAL LOGIC ===
-if (aboutBtn && aboutModal) {
-  aboutBtn.addEventListener("click", () => {
-    aboutModal.classList.remove("hidden");
-  });
-}
-if (aboutCloseBtn) {
-  aboutCloseBtn.addEventListener("click", () => {
-    aboutModal.classList.add("hidden");
-  });
-}
-if (aboutBackdrop) {
-  aboutBackdrop.addEventListener("click", () => {
-    aboutModal.classList.add("hidden");
-  });
-}
+if (aboutBtn && aboutModal) aboutBtn.addEventListener("click", () => aboutModal.classList.remove("hidden"));
+if (aboutCloseBtn) aboutCloseBtn.addEventListener("click", () => aboutModal.classList.add("hidden"));
+if (aboutBackdrop) aboutBackdrop.addEventListener("click", () => aboutModal.classList.add("hidden"));
 
-// --- DELETE ACCOUNT via Edge Function "delete-user" with modal ---
+// --- DELETE ACCOUNT via Edge Function "smooth-action" ---
 if (deleteAccountBtn && deleteModal) {
   deleteAccountBtn.addEventListener("click", () => {
-    if (!currentUser) {
-      alert("Please log in first.");
-      return;
-    }
+    if (!currentUser) return alert("Please log in first.");
     deleteConfirmInput.value = "";
     finalDeleteBtn.disabled = true;
     deleteModal.classList.remove("hidden");
@@ -1561,50 +1373,30 @@ if (deleteAccountBtn && deleteModal) {
   });
 }
 
-// Close delete modal
-if (deleteCloseBtn) {
-  deleteCloseBtn.addEventListener("click", () => {
-    deleteModal.classList.add("hidden");
-  });
-}
+if (deleteCloseBtn) deleteCloseBtn.addEventListener("click", () => deleteModal.classList.add("hidden"));
 if (deleteModal) {
   const backdrop = deleteModal.querySelector(".modal-backdrop");
-  if (backdrop) {
-    backdrop.addEventListener("click", () => {
-      deleteModal.classList.add("hidden");
-    });
-  }
+  if (backdrop) backdrop.addEventListener("click", () => deleteModal.classList.add("hidden"));
 }
 
-// Enable final delete only when user typed DELETE
 if (deleteConfirmInput && finalDeleteBtn) {
   deleteConfirmInput.addEventListener("input", () => {
     finalDeleteBtn.disabled = deleteConfirmInput.value.trim() !== "DELETE";
   });
 }
 
-// Final delete click: call Supabase Edge Function named "delete-user"
 if (finalDeleteBtn) {
   finalDeleteBtn.addEventListener("click", async () => {
-    if (!currentUser) {
-      alert("Please log in first.");
-      return;
-    }
-
-    if (deleteConfirmInput.value.trim() !== "DELETE") {
-      alert('Please type "DELETE" to confirm.');
-      return;
-    }
+    if (!currentUser) return alert("Please log in first.");
+    if (deleteConfirmInput.value.trim() !== "DELETE") return alert('Please type "DELETE" to confirm.');
 
     finalDeleteBtn.disabled = true;
     finalDeleteBtn.textContent = "Deleting…";
 
     try {
-      const { data, error } = await supabase.functions.invoke("smooth-action", {
-  // `invoke` already uses POST by default
-  // If your function expects JSON, send it like this:
-  body: { action: "delete-user" }
-});
+      const { error } = await supabase.functions.invoke("smooth-action", {
+        body: { action: "delete-user" }
+      });
 
       if (error) {
         console.error("Delete user error:", error);
@@ -1634,6 +1426,97 @@ if (finalDeleteBtn) {
   });
 }
 
+// === THEME TOGGLE (Light <-> Dark) ===
+(function initThemeToggle() {
+  const STORAGE_KEY = "ts_theme";
+
+  function getTheme() {
+    const saved = (localStorage.getItem(STORAGE_KEY) || "").toLowerCase();
+    if (saved === "light" || saved === "dark") return saved;
+
+    const fromDom = (document.body.dataset.theme || "").toLowerCase();
+    if (fromDom === "light" || fromDom === "dark") return fromDom;
+
+    return "dark";
+  }
+
+  function setTheme(theme) {
+    const t = theme === "light" ? "light" : "dark";
+    document.body.dataset.theme = t;
+    localStorage.setItem(STORAGE_KEY, t);
+    updateThemeToggleLabel();
+  }
+
+  function updateThemeToggleLabel() {
+    if (!themeToggleBtn) return;
+    const current = document.body.dataset.theme;
+    if (current === "dark") {
+      themeToggleBtn.textContent = "☀️ Light";
+      themeToggleBtn.title = "Switch to light theme";
+      themeToggleBtn.setAttribute("aria-label", "Switch to light theme");
+    } else {
+      themeToggleBtn.textContent = "🌙 Dark";
+      themeToggleBtn.title = "Switch to dark theme";
+      themeToggleBtn.setAttribute("aria-label", "Switch to dark theme");
+    }
+  }
+
+  setTheme(getTheme());
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener("click", () => {
+      const current = document.body.dataset.theme;
+      setTheme(current === "dark" ? "light" : "dark");
+    });
+  }
+})();
+let gameInstance = null;
+
+const openGameBtn = document.getElementById("openGameBtn");
+const closeGameBtn = document.getElementById("closeGameBtn");
+const gameModal = document.getElementById("gameModal");
+const gameBackdrop = document.getElementById("gameBackdrop");
+const gameCanvas = document.getElementById("taskSnacksGame");
+const mobileKickBtn = document.getElementById("mobileKickBtn");
+const mobileThemeBtn = document.getElementById("mobileThemeBtn");
+
+function openGame() {
+  if (!gameModal || !gameCanvas) return console.warn("Game modal elements missing");
+  gameModal.classList.remove("hidden");
+  gameModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+
+  // Prevent creating multiple instances if user clicks Play repeatedly
+  if (gameInstance) return;
+
+  gameInstance = window.createBreakRun({
+    canvas: gameCanvas,
+    getTheme: () => ((document.body.dataset.theme || "dark") === "dark" ? "dark" : "white"),
+    onRequestThemeToggle: () => document.getElementById("themeToggleBtn")?.click()
+  });
+
+  gameInstance.resize?.();
+}
+
+function closeGame() {
+  if (!gameModal || !gameCanvas) return console.warn("Game modal elements missing");
+  gameInstance?.destroy?.();
+  gameInstance = null;
+
+  gameModal.classList.add("hidden");
+  gameModal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+openGameBtn?.addEventListener("click", openGame);
+closeGameBtn?.addEventListener("click", closeGame);
+gameBackdrop?.addEventListener("click", closeGame);
+
+mobileKickBtn?.addEventListener("click", () => gameInstance?.kick?.());
+mobileThemeBtn?.addEventListener("click", () => document.getElementById("themeToggleBtn")?.click());
+
+window.addEventListener("resize", () => gameInstance?.resize?.());
+window.addEventListener("orientationchange", () => setTimeout(() => gameInstance?.resize?.(), 80));
 // === INIT ===
 handleRecoveryFromURL();
 checkSession();
