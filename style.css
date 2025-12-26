@@ -637,9 +637,7 @@ button#organizeBtn:disabled {
 
 /* Modal */
 
-.modal.hidden {
-  display: none;
-}
+.modal.hidden { display: none !important; }
 
 .modal {
   position: fixed;
@@ -947,4 +945,468 @@ button#organizeBtn:disabled {
 
 #moveUnfinishedBtn:hover {
   filter: brightness(0.95);
+}
+
+
+/* ==========================================================
+   Dual-theme system (Light + MOTTI Dark)
+   Toggle uses: body[data-theme="light"|"dark"]
+   ========================================================== */
+
+/* Background stage (used by the new HTML) */
+.theme-stage {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Keep app content above stage */
+.container,
+.app-shell,
+.motti-shell,
+.ts-app {
+  position: relative;
+  z-index: 1;
+}
+
+/* Theme toggle button — must be obvious */
+#themeToggleBtn,
+.theme-toggle {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+  transform: translateY(0);
+  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
+}
+
+#themeToggleBtn:hover,
+.theme-toggle:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+  box-shadow: 0 14px 34px rgba(0,0,0,0.22);
+}
+
+/* Default (light) — uses your existing palette */
+body[data-theme="light"] {
+  /* Keep your original system variables */
+  --primary: #75bde0;
+  --primary-soft: #78d1d2;
+  --accent-green: #97dbae;
+  --accent-soft: #cde4ad;
+
+  --text-main: #1f2937;
+  --text-muted: #6b7280;
+  --card-bg: #ffffff;
+  --border-subtle: #e5e7eb;
+}
+
+body[data-theme="light"] .theme-stage {
+  background:
+    radial-gradient(900px 650px at 20% 0%, rgba(120, 209, 210, 0.35), transparent 55%),
+    radial-gradient(900px 650px at 85% 15%, rgba(117, 189, 224, 0.28), transparent 55%),
+    linear-gradient(180deg, var(--primary-soft) 0%, var(--primary) 50%, #ffffff 100%);
+}
+
+body[data-theme="light"] #themeToggleBtn,
+body[data-theme="light"] .theme-toggle {
+  background: rgba(255,255,255,0.85);
+  color: #0f172a;
+  border: 1px solid rgba(15,23,42,0.12);
+}
+
+/* ==========================================================
+   MOTTI DARK theme (palette + surfaces)
+   IMPORTANT: we override your existing CSS by changing the same variables
+   ========================================================== */
+
+body[data-theme="dark"] {
+  /* Lifted dark background (not pure black) */
+  --primary: #7a88ff;       /* periwinkle accent */
+  --primary-soft: #31dcff;  /* cyan accent */
+  --accent-green: #7ff0c8;  /* mint for "Add" */
+  --accent-soft: #ffd86b;   /* warm highlight */
+
+  --text-main: rgba(255,255,255,0.94);
+  --text-muted: rgba(255,255,255,0.68);
+  --card-bg: rgba(32, 36, 48, 0.86);
+  --border-subtle: rgba(255,255,255,0.12);
+}
+
+body[data-theme="dark"] .theme-stage {
+  background:
+    radial-gradient(980px 680px at 20% 10%, rgba(122,136,255,0.22), transparent 60%),
+    radial-gradient(860px 640px at 88% 18%, rgba(49,220,255,0.18), transparent 62%),
+    radial-gradient(980px 780px at 50% 110%, rgba(255,216,107,0.10), transparent 60%),
+    radial-gradient(1200px 900px at 50% 50%, rgba(255,255,255,0.04), transparent 60%),
+    linear-gradient(180deg, #0f1220, #0b0d14);
+}
+
+/* Body background override (your file sets a light gradient on body) */
+body[data-theme="dark"] {
+  background: transparent !important;
+}
+
+/* Make sure the global "make all text dark" rule flips properly via variables */
+body[data-theme="dark"] h1,
+body[data-theme="dark"] h2,
+body[data-theme="dark"] h3,
+body[data-theme="dark"] p,
+body[data-theme="dark"] span,
+body[data-theme="dark"] label,
+body[data-theme="dark"] div,
+body[data-theme="dark"] button,
+body[data-theme="dark"] input,
+body[data-theme="dark"] textarea,
+body[data-theme="dark"] select {
+  color: var(--text-main);
+}
+
+/* Top bar buttons in dark */
+body[data-theme="dark"] #themeToggleBtn,
+body[data-theme="dark"] .theme-toggle {
+  background: linear-gradient(135deg, rgba(122,136,255,0.85), rgba(49,220,255,0.65));
+  color: rgba(10,12,18,0.92);
+  border: 1px solid rgba(255,255,255,0.16);
+}
+
+body[data-theme="dark"] .cute-refresh,
+body[data-theme="dark"] .about-btn {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.92);
+  border: 1px solid rgba(255,255,255,0.14);
+}
+
+body[data-theme="dark"] .cute-refresh:hover,
+body[data-theme="dark"] .about-btn:hover {
+  filter: brightness(1.06);
+}
+
+/* Cards / sections that were hardcoded white */
+body[data-theme="dark"] .calendar-section,
+body[data-theme="dark"] .logged-out-info,
+body[data-theme="dark"] #authSection.auth-card,
+body[data-theme="dark"] .account-settings {
+  background: var(--card-bg) !important;
+  border-color: var(--border-subtle) !important;
+  box-shadow: 0 16px 46px rgba(0,0,0,0.34) !important;
+  backdrop-filter: blur(14px);
+}
+
+/* Textareas & inputs that were hardcoded white */
+body[data-theme="dark"] textarea,
+body[data-theme="dark"] #authSection input,
+body[data-theme="dark"] .manual-add input,
+body[data-theme="dark"] .sort-section select,
+body[data-theme="dark"] .priority-select {
+  background: rgba(10, 12, 18, 0.55) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+  color: var(--text-main) !important;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.26) !important;
+}
+
+body[data-theme="dark"] input::placeholder,
+body[data-theme="dark"] textarea::placeholder {
+  color: rgba(255,255,255,0.45) !important;
+}
+
+body[data-theme="dark"] input:focus,
+body[data-theme="dark"] textarea:focus,
+body[data-theme="dark"] select:focus {
+  outline: none;
+  border-color: rgba(49,220,255,0.40) !important;
+  box-shadow: 0 0 0 4px rgba(49,220,255,0.14) !important;
+}
+
+/* Fix the BIG clash: task rows should not be white */
+body[data-theme="dark"] .task-item {
+  background: rgba(14, 16, 24, 0.48) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.28) !important;
+}
+
+body[data-theme="dark"] .task-item.high { border-left-color: rgba(122,136,255,0.95) !important; }
+body[data-theme="dark"] .task-item.medium { border-left-color: rgba(49,220,255,0.90) !important; }
+body[data-theme="dark"] .task-item.low { border-left-color: rgba(127,240,200,0.85) !important; }
+
+body[data-theme="dark"] .task-move,
+body[data-theme="dark"] .task-move-date {
+  color: rgba(255,255,255,0.60) !important;
+}
+
+body[data-theme="dark"] .task-move:hover,
+body[data-theme="dark"] .task-move-date:hover {
+  color: rgba(255,255,255,0.82) !important;
+}
+
+/* Buttons in dark */
+body[data-theme="dark"] #authSection button,
+body[data-theme="dark"] .manual-add button,
+body[data-theme="dark"] #moveUnfinishedBtn,
+body[data-theme="dark"] button#organizeBtn {
+  color: rgba(10,12,18,0.92) !important;
+}
+
+body[data-theme="dark"] .manual-add button {
+  background: linear-gradient(135deg, rgba(127,240,200,0.85), rgba(49,220,255,0.55)) !important;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.28) !important;
+}
+
+body[data-theme="dark"] button#organizeBtn,
+body[data-theme="dark"] #moveUnfinishedBtn {
+  background: linear-gradient(135deg, rgba(122,136,255,0.90), rgba(49,220,255,0.65)) !important;
+  box-shadow: 0 18px 44px rgba(0,0,0,0.34) !important;
+}
+
+/* Calendar day tiles */
+body[data-theme="dark"] .cal-day {
+  background: rgba(255,255,255,0.06) !important;
+  color: rgba(255,255,255,0.86) !important;
+}
+
+body[data-theme="dark"] .cal-day.has-tasks {
+  background: rgba(49,220,255,0.10) !important;
+  border-color: rgba(49,220,255,0.24) !important;
+}
+
+body[data-theme="dark"] .cal-day.selected {
+  background: rgba(49,220,255,0.55) !important;
+  border-color: rgba(49,220,255,0.70) !important;
+  color: rgba(10,12,18,0.92) !important;
+}
+
+/* Settings gear + dropdown */
+body[data-theme="dark"] .settings-btn {
+  background: rgba(255,255,255,0.06) !important;
+  color: rgba(255,255,255,0.92) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+}
+
+body[data-theme="dark"] .settings-menu {
+  background: rgba(20,22,30,0.92) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+}
+
+body[data-theme="dark"] .settings-item:hover {
+  background: rgba(255,255,255,0.06) !important;
+}
+
+/* Modal */
+body[data-theme="dark"] .modal-backdrop {
+  background: rgba(0,0,0,0.58) !important;
+}
+
+body[data-theme="dark"] .modal-dialog {
+  background: rgba(18,20,28,0.94) !important;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.92) !important;
+}
+
+body[data-theme="dark"] .modal-close {
+  color: rgba(255,255,255,0.70) !important;
+}
+
+body[data-theme="dark"] .modal-close:hover {
+  color: rgba(255,255,255,0.92) !important;
+}
+
+/* Hint banner */
+body[data-theme="dark"] .try-ai-hint {
+  color: rgba(255,255,255,0.72) !important;
+  background: rgba(255,255,255,0.06) !important;
+}
+
+/* Footer */
+body[data-theme="dark"] .ts-footer,
+body[data-theme="dark"] .footer-email a {
+  color: rgba(255,255,255,0.70) !important;
+}
+
+body[data-theme="dark"] .footer-email a:hover {
+  color: rgba(49,220,255,0.90) !important;
+}
+
+/* Slightly tighter container on wide screens to avoid “empty right side” feel */
+@media (min-width: 900px) {
+  body[data-theme="dark"] .container {
+    max-width: 920px;
+  }
+}
+
+/* Calendar toggle button: make it a pill (no circle behind text) */
+#calendarToggleBtn,
+.calendar-toggle-btn{
+  width: auto !important;
+  height: auto !important;
+  min-height: 36px;
+  padding: 8px 14px !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Light theme */
+body[data-theme="light"] #calendarToggleBtn,
+body[data-theme="light"] .calendar-toggle-btn{
+  background: rgba(255,255,255,0.85) !important;
+  border: 1px solid rgba(15,23,42,0.12) !important;
+  color: #0f172a !important;
+}
+
+/* Dark theme */
+body[data-theme="dark"] #calendarToggleBtn,
+body[data-theme="dark"] .calendar-toggle-btn{
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  color: rgba(255,255,255,0.92) !important;
+}
+/* Fix calendar header clickability (arrows / toggle) */
+.calendar-header{
+  position: relative;
+  z-index: 5;
+}
+
+.calendar-grid{
+  position: relative;
+  z-index: 1;
+}
+
+.calendar-nav button,
+#calendarToggleBtn{
+  pointer-events: auto;
+}
+
+.game-dialog{
+  max-width: 980px;
+  width: calc(100% - 20px);
+  padding: 0;
+  overflow: hidden;
+}
+
+.game-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+}
+
+.game-title{ font-weight: 900; }
+
+.game-body{ padding: 14px; }
+
+#taskSnacksGame{
+  width: 100%;
+  height: auto;
+  display:block;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+}
+
+.game-rules{
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.game-mobile-controls{
+  display:flex;
+  gap:10px;
+  margin-top: 12px;
+}
+
+.game-mobile-controls .btn{ flex:1; }
+
+/* Important for phones: stop scroll gestures from fighting the canvas */
+#gameModal, #taskSnacksGame{
+  touch-action: none;
+}
+/* Dark theme: reward / fun-fact popup/card */
+body[data-theme="dark"] .reward,
+body[data-theme="dark"] .reward-box,
+body[data-theme="dark"] .funfact,
+body[data-theme="dark"] .toast,
+body[data-theme="dark"] .modal .reward-box {
+  background: rgba(255, 255, 255, 0.10) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(10px);
+}
+
+body[data-theme="dark"] .reward *,
+body[data-theme="dark"] .reward-box *,
+body[data-theme="dark"] .funfact *,
+body[data-theme="dark"] .toast * {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+/* Dark theme: inputs inside modals (DELETE confirm etc.) */
+body[data-theme="dark"] .modal input,
+body[data-theme="dark"] .modal textarea,
+body[data-theme="dark"] .modal select {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+body[data-theme="dark"] .modal input::placeholder,
+body[data-theme="dark"] .modal textarea::placeholder {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+/* ============================
+   FIXES: Dark theme contrasts
+   ============================ */
+
+/* 1) Reward / fun-fact popup (THIS was missing!) */
+body[data-theme="dark"] .fun-fact-popup{
+  background: rgba(18, 20, 28, 0.92) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  border-top: 4px solid rgba(49, 220, 255, 0.85) !important;
+  color: rgba(255,255,255,0.92) !important;
+}
+
+body[data-theme="dark"] .fun-fact-popup strong{
+  color: rgba(49, 220, 255, 0.95) !important;
+}
+
+body[data-theme="dark"] .fun-fact-popup .reward-ascii{
+  color: rgba(255,255,255,0.86) !important;
+}
+
+/* If you also show a fun-fact inline under the list */
+body[data-theme="dark"] .fun-fact{
+  color: rgba(49,220,255,0.92) !important;
+}
+
+/* 2) Delete confirm input */
+body[data-theme="dark"] .delete-input{
+  background: rgba(10, 12, 18, 0.55) !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  color: rgba(255,255,255,0.92) !important;
+}
+
+body[data-theme="dark"] .delete-input::placeholder{
+  color: rgba(255,255,255,0.55) !important;
+}
+
+/* 3) Play button readability (top bar) */
+body[data-theme="dark"] #openGameBtn{
+  background: rgba(255,255,255,0.10) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  color: rgba(255,255,255,0.92) !important;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.22) !important;
+}
+
+body[data-theme="dark"] #openGameBtn:hover{
+  filter: brightness(1.06);
 }
