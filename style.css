@@ -1410,3 +1410,137 @@ body[data-theme="dark"] #openGameBtn{
 body[data-theme="dark"] #openGameBtn:hover{
   filter: brightness(1.06);
 }
+
+/* =========================
+   GAME: mobile usability fix
+   ========================= */
+@media (max-width: 600px) {
+  /* Make the game modal go full screen */
+  .game-dialog {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+  }
+
+  .game-body {
+    padding: 12px !important;
+  }
+
+  /* Give the canvas real height on phones */
+  #taskSnacksGame {
+    width: 100% !important;
+    height: 42vh !important;     /* key: makes it playable */
+    min-height: 260px !important;
+    max-height: 420px !important;
+    border-radius: 14px !important;
+  }
+
+  /* Sticky controls so Kick is always visible */
+  .game-mobile-controls {
+    position: sticky;
+    bottom: 0;
+    padding: 10px 0 6px;
+    margin-top: 10px;
+    gap: 10px;
+    background: rgba(0,0,0,0.10);
+    backdrop-filter: blur(10px);
+    border-radius: 14px;
+  }
+
+  .game-mobile-controls .btn,
+  .game-mobile-controls button {
+    min-height: 54px;
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    border-radius: 14px;
+  }
+
+  /* Make Kick look like the primary action */
+  #gameKickBtn {
+    background: linear-gradient(135deg, rgba(255,216,107,0.95), rgba(49,220,255,0.75)) !important;
+    color: rgba(10,12,18,0.92) !important;
+    border: 1px solid rgba(255,255,255,0.14) !important;
+  }
+
+  /* Theme button secondary */
+  #gameThemeBtn {
+    background: rgba(255,255,255,0.08) !important;
+    color: rgba(255,255,255,0.92) !important;
+    border: 1px solid rgba(255,255,255,0.16) !important;
+  }
+
+  /* Rules text slightly smaller */
+  .game-rules {
+    font-size: 12.5px !important;
+    line-height: 1.45 !important;
+  }
+}
+
+/* =========================
+   GAME: PHONE-ONLY FIX
+   ========================= */
+@media (max-width: 600px) {
+  /* Make the game modal fullscreen on phone */
+  .game-dialog {
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-width: none !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+  }
+
+  .game-body {
+    padding: 12px !important;
+  }
+
+  /* Make canvas BIG on phone */
+  #taskSnacksGame {
+    width: 100% !important;
+    height: 56dvh !important;     /* big + fun */
+    min-height: 340px !important; /* prevents tiny canvas */
+    max-height: 520px !important;
+    border-radius: 16px !important;
+  }
+
+  /* Sticky controls at bottom */
+  .game-mobile-controls {
+    position: sticky;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 10px 0 6px;
+    margin-top: 10px;
+    background: rgba(0,0,0,0.12);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+  }
+
+  .game-mobile-controls button {
+    min-height: 56px;
+    font-size: 16px;
+    font-weight: 900;
+    border-radius: 16px;
+  }
+
+  /* Dark theme: make Jump & Kick super readable */
+  body[data-theme="dark"] #mobileJumpBtn {
+    background: rgba(255,255,255,0.12) !important;
+    border: 1px solid rgba(255,255,255,0.18) !important;
+    color: rgba(255,255,255,0.95) !important;
+  }
+
+  body[data-theme="dark"] #mobileKickBtn {
+    background: linear-gradient(135deg, rgba(255,216,107,0.95), rgba(49,220,255,0.75)) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    color: rgba(10,12,18,0.92) !important;
+  }
+
+  body[data-theme="white"] #mobileJumpBtn,
+  body[data-theme="white"] #mobileKickBtn {
+    border: 1px solid rgba(15,23,42,0.16) !important;
+  }
+}
