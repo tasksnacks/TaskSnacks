@@ -68,8 +68,12 @@
     function positionPlayer() {
       const w = canvas.clientWidth || 960;
       const isPhone = window.matchMedia && window.matchMedia("(max-width: 600px)").matches;
-      const target = isPhone ? Math.round(w * 0.14) : Math.round(w * 0.18);
-      player.x = clamp(target, 70, 190);
+
+      // Put the player clearly on the left on phones (more reaction time)
+      const target = isPhone ? Math.round(w * 0.09) : Math.round(w * 0.16);
+
+      // Allow much further-left placement on small screens
+      player.x = clamp(target, 28, 200);
     }
 
     function fitCanvas() {
