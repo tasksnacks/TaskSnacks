@@ -49,6 +49,29 @@
     // -----------------------------
     // HiDPI resize
     // -----------------------------
+
+    // -----------------------------
+    // Player (defined early so fitCanvas can position it)
+    // -----------------------------
+    const player = {
+      x: 150,
+      y: 0,
+      w: 72,
+      h: 68,
+      vy: 0,
+      onGround: true,
+      jumpHold: 0,
+      jumpHolding: false
+    };
+
+    // Keep the player more to the left (more reaction time on mobile)
+    function positionPlayer() {
+      const w = canvas.clientWidth || 960;
+      const isPhone = window.matchMedia && window.matchMedia("(max-width: 600px)").matches;
+      const target = isPhone ? Math.round(w * 0.14) : Math.round(w * 0.18);
+      player.x = clamp(target, 70, 190);
+    }
+
     function fitCanvas() {
       const cssW = canvas.clientWidth || 960;
 
@@ -73,6 +96,7 @@
       canvas.width = Math.round(cssW * dpr);
       canvas.height = Math.round(cssH * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      positionPlayer();
     }
     fitCanvas();
 
@@ -133,17 +157,6 @@
 
     const world = { groundY: 0, scrollX: 0 };
 
-    const player = {
-      x: 150,
-      y: 0,
-      w: 72,
-      h: 68,
-      vy: 0,
-      onGround: true,
-      jumpHold: 0,
-      jumpHolding: false
-    };
-
     const obstacles = [];
 
     const enemies = [
@@ -192,6 +205,7 @@
       player.onGround = true;
       player.jumpHold = 0;
       player.jumpHolding = false;
+      positionPlayer();
     }
 
     function start() {
