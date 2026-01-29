@@ -184,7 +184,66 @@ const themeToggleBtn = document.getElementById("themeToggleBtn");
 const navLoggedOut = document.getElementById("navLoggedOut");
 const navLoggedIn = document.getElementById("navLoggedIn");
 const loggedOutLanding = document.getElementById("loggedOutLanding");
+// --- Mobile-only layout reorder (calendar -> tasks -> add) ---
+const _mobileLayout = {
+  applied: false,
+  manual: null,
+  brain: null,
+  profile: null
+};
 
+function _capture(node) {
+  return node
+    ? { node, parent: node.parentElement, next: node.nextElementSibling }
+    : null;
+}
+
+function _restore(slot) {
+  if (!slot || !slot.node || !slot.parent) return;
+  slot.parent.insertBefore(slot.node, slot.next);
+}
+
+function applyMobileLayoutOrder() {
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+  const leftCol = document.querySelector(".layout-col-left");
+  const rightCol = document.querySelector(".layout-col-right");
+  const brainSection = brainDump?.closest("section");
+  const profileSection = document.querySelector(".user-profile-card");
+
+  // Only apply when logged in + on mobile
+  if (!currentUser || !isMobile) {
+    if (_mobileLayout.applied) {
+      _restore(_mobileLayout.manual);
+      _restore(_mobileLayout.brain);
+      _restore(_mobileLayout.profile);
+      _mobileLayout.applied = false;
+    }
+    return;
+  }
+
+  if (!leftCol || !rightCol) return;
+
+  // Make sure calendar is the first thing in the left column
+  if (calendarSection && leftCol.firstElementChild !== calendarSection) {
+    leftCol.insertBefore(calendarSection, leftCol.firstChild);
+  }
+
+  // Apply once (capture original positions so we can restore on desktop)
+  if (!_mobileLayout.applied) {
+    _mobileLayout.manual = _capture(manualAddSection);
+    _mobileLayout.brain = _capture(brainSection);
+    _mobileLayout.profile = _capture(profileSection);
+    _mobileLayout.applied = true;
+  }
+
+  // Move add-task and brain-dump UNDER the tasks area (right column)
+  if (manualAddSection) rightCol.appendChild(manualAddSection);
+  if (brainSection) rightCol.appendChild(brainSection);
+
+  // Optional: move profile/logout to the bottom so it doesn't break the flow
+  if (profileSection) rightCol.appendChild(profileSection);
+}
 // Settings + delete modal
 const settingsBtn = document.getElementById("settingsBtn");
 const settingsMenu = document.getElementById("settingsMenu");
@@ -391,6 +450,8 @@ function updateAuthUI() {
   const hasCalendar = !!calendarSection;
   const hasSort = !!sortSection;
   const hasManual = !!manualAddSection;
+if (currentUser) applyMobileOrder();
+window.addEventListener("resize", () => applyMobileOrder());
 
   if (currentUser) {
     authStatus.textContent = `Logged in as ${currentUser.email}`;
@@ -450,6 +511,7 @@ if (navLoggedIn) navLoggedIn.style.display = currentUser ? "flex" : "none";
   }
 
   if (settingsMenu) settingsMenu.classList.add("hidden");
+  applyMobileLayoutOrder();
 }
 
 // === SIGNUP / LOGIN / LOGOUT ===
@@ -504,7 +566,34 @@ logoutBtn.addEventListener("click", async () => {
   isPreviewMode = false;
   updateAuthUI();
 });
+function applyMobileOrder() {
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+  if (!isMobile || !currentUser) return;
 
+  const leftCol = document.querySelector(".layout-col-left");
+  const rightCol = document.querySelector(".layout-col-right");
+  if (!leftCol || !rightCol) return;
+
+  // Put calendar first (top of left column)
+  if (calendarSection && leftCol.firstElementChild !== calendarSection) {
+    leftCol.insertBefore(calendarSection, leftCol.firstChild);
+  }
+
+  // Put tasks list right after calendar by moving right column under calendar
+  const grid = document.querySelector(".app-grid-layout");
+  if (grid) {
+    // grid children: leftCol, rightCol
+    // ensure leftCol is first, rightCol is second
+    if (grid.firstElementChild !== leftCol) grid.insertBefore(leftCol, grid.firstChild);
+    if (leftCol.nextElementSibling !== rightCol) grid.insertBefore(rightCol, leftCol.nextElementSibling);
+  }
+
+  // Move Add Task bar just above Brain Dump (still in left col, but after tasks)
+  if (manualAddSection && leftCol.contains(manualAddSection)) {
+    // Place it at the very end of rightCol (after tasks) OR keep it in leftCol under tasks
+    rightCol.appendChild(manualAddSection);
+  }
+}
 // Refresh button
 if (refreshBtn) refreshBtn.addEventListener("click", () => location.reload());
 
@@ -1600,6 +1689,8 @@ function openGame() {
   });
 
   gameInstance.resize?.();
+  requestAnimationFrame(() => gameInstance.resize?.());
+setTimeout(() => gameInstance.resize?.(), 120);
 }
 
 function closeGame() {
@@ -1621,7 +1712,8 @@ mobileThemeBtn?.addEventListener("click", () => document.getElementById("themeTo
 
 window.addEventListener("resize", () => gameInstance?.resize?.());
 window.addEventListener("orientationchange", () => setTimeout(() => gameInstance?.resize?.(), 80));
-
+window.addEventListener("resize", applyMobileLayoutOrder);
+window.addEventListener("orientationchange", () => setTimeout(applyMobileLayoutOrder, 150));
 // === CALENDAR PICKER HELPERS ===
 
 function toggleDatePicker(currentYear, currentMonth) {
