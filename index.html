@@ -3,307 +3,235 @@
 <head>
   <meta charset="UTF-8" />
   <title>TaskSnacks</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Open Graph (Facebook, LinkedIn, Slack) -->
-<meta property="og:title" content="TaskSnacks" />
-<meta property="og:description" content="Turn messy thoughts into clear tasks." />
-<meta property="og:image" content="https://www.tasksnacks.com/og-image.png" />
-<meta property="og:url" content="https://www.tasksnacks.com" />
-<meta property="og:type" content="website" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+  
+  <meta property="og:title" content="TaskSnacks" />
+  <meta property="og:description" content="Turn messy thoughts into clear tasks." />
+  <meta property="og:image" content="https://www.tasksnacks.com/og-image.png" />
+  <meta property="og:url" content="https://www.tasksnacks.com" />
+  <meta property="og:type" content="website" />
 
-<!-- Twitter (now X) -->
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="TaskSnacks" />
-<meta name="twitter:description" content="Turn messy thoughts into clear tasks." />
-<meta name="twitter:image" content="https://www.tasksnacks.com/og-image.png" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="ts-app" data-theme="dark">
-  <!-- Background stage for themes (styled in CSS later) -->
+  
   <div class="theme-stage" aria-hidden="true"></div>
+
   <div class="container app-shell">
-    <!-- Top bar: About + Refresh (always visible) -->
-    <div class="top-bar">
-      <button id="aboutBtn" class="about-btn" type="button">
-        About TaskSnacks
-      </button>
+    
+    <nav class="top-bar">
+      <div class="brand-area">
+        <img src="favicon.png" alt="Logo" class="nav-logo">
+        <span class="brand-name">TaskSnacks</span>
+      </div>
 
       <div class="top-bar-right">
-        <!-- Theme toggle (very visible) -->
-        <button id="themeToggleBtn" class="theme-toggle" type="button" aria-label="Switch theme">
-          🌙 Dark
-        </button>
+        <!-- Logged-out actions (simple landing header) -->
+        <div id="navLoggedOut" class="nav-actions nav-actions-logged-out">
+          <button id="themeToggleBtn" class="icon-btn theme-toggle" type="button" aria-label="Switch theme">
+            🌙
+          </button>
+          <button id="aboutBtn" class="btn-text" type="button" aria-label="About TaskSnacks">About TaskSnacks</button>
+        </div>
 
-        <button id="refreshBtn" class="cute-refresh" type="button">
-          Refresh
-        </button>
-
-<button id="openGameBtn" class="game-btn" type="button">
-  Bored? Play a game 🎮
-</button>
-
-        <!-- Settings menu trigger -->
-        <div class="settings-wrapper">
-          <button id="settingsBtn" class="settings-btn" type="button">
-            ⚙
+        <!-- Logged-in actions (shown after auth by script.js) -->
+        <div id="navLoggedIn" class="nav-actions nav-actions-logged-in" style="display:none;">
+          <button id="refreshBtn" class="icon-btn" type="button" aria-label="Refresh">
+            ↻
+          </button>
+          <button id="openGameBtn" class="icon-btn game-btn" type="button" aria-label="Play Game">
+            🎮
           </button>
 
-          <!-- Small dropdown menu -->
-          <div id="settingsMenu" class="settings-menu hidden">
-            <button id="changePasswordBtn" type="button" class="settings-item">
-              Change my password
-            </button>
-            <button id="deleteAccountBtn" type="button" class="settings-item danger-item">
-              Delete my account
-            </button>
+          <div class="settings-wrapper">
+            <button id="settingsBtn" class="icon-btn settings-btn" type="button">⚙</button>
+            <div id="settingsMenu" class="settings-menu hidden">
+              <div class="divider"></div>
+              <button id="changePasswordBtn" type="button" class="settings-item">Change password</button>
+              <button id="deleteAccountBtn" type="button" class="settings-item danger-item">Delete account</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </nav>
 
     <header class="hero" aria-label="Hero">
-      <h1>TaskSnacks</h1>
-      <p class="subtitle">Dump your messy thoughts. Get clear tasks. Earn a fun little reward.</p>
+      <div id="loggedOutLanding" class="landing-shell">
+        <div id="authSection" class="auth-container">
+        <h1 class="hero-title">Clear your mind.</h1>
+        <p class="subtitle">Turn chaos into tasks.</p>
+        
+        <div class="auth-controls">
+          <input id="emailInput" type="email" placeholder="Email address" class="auth-input" />
+          <input id="passwordInput" type="password" placeholder="Password" class="auth-input" />
+          
+          <div class="auth-buttons">
+            <button id="loginBtn" type="button" class="btn btn-primary">Log in</button>
+            <button id="signupBtn" type="button" class="btn btn-secondary">Sign up</button>
+          </div>
+        </div>
+        
+        <div id="passwordResetSection" style="display:none;" class="auth-reset-box">
+          <p>Set a new password</p>
+          <input id="newPasswordInput" type="password" placeholder="New password" />
+          <button id="setNewPasswordBtn" type="button" class="btn btn-primary">Update</button>
+        </div>
+        </div>
+        <div class="landing-vision" aria-label="TaskSnacks vision">
+          <p class="landing-vision-text">TaskSnacks helps you get things done — brain dump your day, then let AI turn it into clear tasks.</p>
+        </div>
+      </div>
     </header>
 
-    <!-- Auth section -->
-    <div id="authSection">
-      <input id="emailInput" type="email" placeholder="Email" />
-      <input id="passwordInput" type="password" placeholder="Password" />
-      <button id="signupBtn" type="button">Sign up</button>
-      <button id="loginBtn" type="button">Log in</button>
-      <button id="logoutBtn" type="button" style="display:none;">Log out</button>
-      <p id="authStatus" class="auth-status"></p>
-    </div>
-    
-    <!-- Password reset section (only used when coming from the email link) -->
-    <div id="passwordResetSection" style="display:none; margin-top:16px;">
-      <p>Set a new password for your TaskSnacks account.</p>
-      <input
-        id="newPasswordInput"
-        type="password"
-        placeholder="New password"
-        style="margin-top:8px; padding:8px; border-radius:8px; border:1px solid #e5e7eb; width:100%; max-width:260px;"
-      />
-      <button
-        id="setNewPasswordBtn"
-        type="button"
-        style="margin-top:8px;"
-      >
-        Update password
-      </button>
-    </div>
-    
-<!-- Everything below is only visible when logged in -->
-<div id="appContent" class="app-main" style="display:none;">
-  <div class="app-grid">
+    <div id="appContent" class="app-main" style="display:none;">
+      
+      <div class="app-grid-layout">
+        
+        <aside class="layout-col-left">
+          
+          <section class="user-profile-card">
+             <div class="profile-content">
+               <p id="authStatus" class="profile-email"></p>
+               <button id="logoutBtn" type="button" class="btn-xs btn-outline">Log out</button>
+             </div>
+          </section>
 
-  <!-- Calendar -->
-  <section id="calendarSection" class="card card--calendar calendar-section" aria-label="Calendar">
-  <div class="calendar-header">
-    <div class="calendar-nav">
-      <button id="prevMonthBtn" type="button">‹</button>
-      <span id="calendarMonthLabel" class="calendar-month-label">Month Year</span>
-      <button id="nextMonthBtn" type="button">›</button>
-    </div>
-    <button id="calendarToggleBtn" type="button" class="calendar-toggle-btn">
-      Hide calendar
-    </button>
-  </div>
-  <div id="calendarGrid" class="calendar-grid"></div>
-</section>
+          <section id="calendarSection" class="card card-calendar">
+            <div class="card-header">
+              <div class="calendar-nav">
+                <button id="prevMonthBtn" type="button" class="nav-arrow">‹</button>
+                <span id="calendarMonthLabel" class="calendar-label">Month</span>
+                <button id="nextMonthBtn" type="button" class="nav-arrow">›</button>
+              </div>
+              <button id="calendarToggleBtn" type="button" class="btn-text">Hide</button>
+            </div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+            <input id="taskDate" type="date" style="display:none;" />
+          </section>
 
-  <!-- Sort controls -->
-  <section id="sortSection" class="card card--sort sort-section" aria-label="Sort">
-    <label for="sortMode">Sort tasks:</label>
-    <select id="sortMode">
-      <option value="priority">By importance (High → Low)</option>
-      <option value="custom">My order</option>
-      <option value="created">By creation time</option>
-    </select>
-  </section>
+          <section id="manualAddSection" class="card card-quick">
+            <div class="quick-add-wrapper">
+              <input id="manualTaskInput" type="text" placeholder="Add a specific task..." />
+              <button id="manualAddBtn" type="button" class="btn-icon-add">+</button>
+            </div>
+          </section>
 
-  
-  
-  <!-- Hidden date input used by JS -->
-  <input id="taskDate" type="date" style="display:none;" />
+          <section class="card card-brain">
+            <div class="card-header">
+              <h3>Brain Dump</h3>
+              <span class="badge-ai">AI Powered</span>
+            </div>
+            <textarea id="brainDump" placeholder="What's on your mind? Don't worry about structure..."></textarea>
+            <button id="organizeBtn" type="button" class="btn btn-primary btn-block btn-magic">
+              ✨ Organize My Mess
+            </button>
+          </section>
 
-  <!-- Brain dump -->
-  <section class="card card--brain" aria-label="Brain dump">
-    <div class="card-title">Brain dump</div>
-    <textarea
-      id="brainDump"
-      placeholder="Type everything on your mind..."
-    ></textarea>
-  <button id="organizeBtn" type="button">Organize My Mess</button>
-  </section>
+        </aside>
 
-  <!-- Manual add -->
-  <section id="manualAddSection" class="card card--quick manual-add" aria-label="Quick add">
-    <div class="card-title">Quick add</div>
-    <input
-      id="manualTaskInput"
-      type="text"
-      placeholder="Add a task manually..."
-    />
-    <button id="manualAddBtn" type="button">Add</button>
-  </section>
+        <main class="layout-col-right">
+          
+          <div class="list-header">
+            <h2 class="list-title">Your Tasks</h2>
+            <section id="sortSection" class="sort-controls">
+              <select id="sortMode" class="sort-select">
+                <option value="created">Time Created</option>
+                <option value="priority">Priority (High → Low)</option>
+                <option value="custom">My Order</option>
+              </select>
+            </section>
+          </div>
 
-  <!-- Tasks + fun fact -->
-  <section class="card card--tasks" aria-label="Tasks">
-    <div class="card-title">Today</div>
-    <div id="tasksContainer"></div>
-    <div id="funFactContainer" class="fun-fact reward-box"></div>
+          <section class="tasks-wrapper">
+            <div id="tasksContainer" class="tasks-list"></div>
+            
+            <div id="funFactContainer" class="fun-fact-box"></div>
+            
+            <button id="moveUnfinishedBtn" class="btn btn-ghost btn-block">
+              Move unfinished tasks to tomorrow →
+            </button>
+          </section>
 
-    <button id="moveUnfinishedBtn" class="move-unfinished-btn">
-      Move unfinished tasks to tomorrow
-    </button>
-  </section>
-  
-  <!-- Ko-fi (kept but hidden for now) -->
-  <div class="coffee" style="display:none;">
-    <a href="https://ko-fi.com/tasksnacks" target="_blank" rel="noopener">
-      Support TaskSnacks
-    </a>
-  </div>
+        </main>
+      </div>
+    </div> 
 
-  <!-- Undo bar for delete -->
-  <div id="undoBar" class="undo-bar">
-    <span id="undoText">Task deleted</span>
-    <button id="undoBtn" type="button">Undo</button>
-  </div>
-  </div> <!-- /.app-grid -->
-</div> <!-- /#appContent -->
+    <div id="loggedOutInfo" class="logged-out-info" style="display:none;"></div> 
 
-<!-- About section shown only when logged out -->
-<div id="loggedOutInfo" class="logged-out-info" style="display:none;"></div> 
-  </div> <!-- /.container -->
-
-  <!-- About modal (visible whether logged in or not) -->
-  <div id="aboutModal" class="modal hidden">
+  </div> <div id="aboutModal" class="modal hidden">
     <div id="aboutBackdrop" class="modal-backdrop"></div>
-    <div class="modal-dialog motti-modal">
+    <div class="modal-dialog">
       <button id="aboutCloseBtn" class="modal-close" type="button">&times;</button>
       <h2>About TaskSnacks</h2>
-      <p>
-        Most to-do apps are cluttered with boards, tags, and settings. They expect you
-        to be organized before you can get organized. TaskSnacks was created for people
-        who have busy minds, ADHD brains, or just too much going on.
-      </p>
-      <p>
-        Instead of forcing you to structure everything, TaskSnacks lets you brain-dump
-        your entire day in natural language. You can write however you think, with
-        spelling mistakes, half sentences, or scattered ideas. The built-in AI turns
-        that messy text into 3–7 clear, ordered tasks that match the flow of your day.
-      </p>
-      <p>
-        Preparation steps come before the main action. Morning tasks come before
-        afternoon and evening tasks. You see only what actually matters for today.
-      </p>
-      <p>
-        To keep motivation high, each completed task triggers a small fun-fact reward.
-        It is a gentle, dopamine-friendly nudge that makes finishing tasks feel a bit
-        more satisfying, without turning your day into a game.
-      </p>
-      <p>
-        Right now TaskSnacks is in an early refinement stage: the core loop is stable
-        and we are collecting feedback, improving mobile interactions, and polishing
-        the overall experience. The goal is simple: a calm, friendly tool that helps
-        you move from mental clutter to clear action, one small task at a time.
-      </p>
+      <div class="modal-content-scroll">
+        <p>Most to-do apps are cluttered. TaskSnacks is for busy minds.</p>
+        <p>Brain dump your day, and let AI structure it for you.</p>
+      </div>
     </div>
   </div>
 
-  <!-- Delete account modal -->
   <div id="deleteModal" class="modal hidden">
     <div class="modal-backdrop"></div>
-    <div class="modal-dialog motti-modal">
+    <div class="modal-dialog">
       <button id="deleteCloseBtn" class="modal-close" type="button">&times;</button>
-      <h2>Delete your account</h2>
-      <p>
-        This will permanently delete your TaskSnacks account and all your tasks.
-        This action cannot be undone.
-      </p>
-      <p style="margin-top:8px;">
-        Type <strong>DELETE</strong> to confirm.
-      </p>
-      <input
-  id="deleteConfirmInput"
-  type="text"
-  placeholder="Type DELETE to confirm"
-  class="modal-input"
-/>
-      <button
-        id="finalDeleteBtn"
-        type="button"
-        class="danger-item"
-        style="margin-top:12px;"
-        disabled
-      >
-        Delete my account
-      </button>
+      <h2>Delete Account</h2>
+      <p>Type <strong>DELETE</strong> to confirm.</p>
+      <input id="deleteConfirmInput" type="text" placeholder="DELETE" class="modal-input" />
+      <button id="finalDeleteBtn" type="button" class="btn btn-danger" disabled>Confirm Delete</button>
     </div>
   </div>
 
-  <!-- Goodbye popup -->
   <div id="goodbyeModal" class="modal hidden">
     <div class="modal-backdrop"></div>
-    <div class="modal-dialog motti-modal">
+    <div class="modal-dialog">
       <h2>Goodbye 👋</h2>
-      <p>
-        Your account and all your data have been deleted.
-        See you another time.
-      </p>
     </div>
   </div>
 
-<div id="gameModal" class="modal hidden" aria-hidden="true">
-  <div id="gameBackdrop" class="modal-backdrop"></div>
-
-  <div class="modal-dialog game-dialog">
-    <div class="game-top">
-      <div class="game-title">Break Run</div>
-      <button id="closeGameBtn" class="btn" type="button" aria-label="Close game">✕</button>
-    </div>
-
-    <div class="game-body">
-      <canvas id="taskSnacksGame"></canvas>
-
-      <div class="game-rules">
-        <b>How to play</b><br/>
-        Tap/Space = Jump (hold to jump higher).<br/>
-        K / ↓ = Kick (break procrastination enemies).<br/>
-        Hit anything = lose. Boss after 3 minutes.
+  <div id="gameModal" class="modal hidden" aria-hidden="true">
+    <div id="gameBackdrop" class="modal-backdrop"></div>
+    <div class="modal-dialog game-dialog">
+      <div class="game-top">
+        <span class="game-title">Break Run</span>
+        <button id="closeGameBtn" class="btn-icon" type="button">✕</button>
       </div>
+      
+      <div class="game-body" style="position: relative;">
+        <canvas id="taskSnacksGame"></canvas>
+        
+        <div id="gameStartOverlay" class="game-overlay">
+          <div class="overlay-content">
+            <h3>How to Play</h3>
+            <ul class="game-instructions">
+              <li><span class="key-hint">Tap / Space</span> <strong>JUMP</strong> over Yellow obstacles 🚧</li>
+              <li><span class="key-hint">K / Down</span> <strong>KICK</strong> Red enemies 👹</li>
+              <li>Collect <strong>Coffee ☕</strong> for Flow State (Invincible!)</li>
+            </ul>
+            <button id="startGameBtn" class="btn btn-primary btn-large">START RUN ▶</button>
+          </div>
+        </div>
 
-      <div class="game-mobile-controls">
-        <button id="mobileJumpBtn" class="btn btn-primary" type="button" aria-label="Jump">JUMP ⤴</button>
-        <button id="mobileKickBtn" class="btn btn-secondary" type="button" aria-label="Kick">KICK ⚡</button>
+        <div class="game-mobile-controls">
+          <button id="mobileJumpBtn" class="btn btn-primary">JUMP</button>
+          <button id="mobileKickBtn" class="btn btn-secondary">KICK</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-  <!-- Supabase client -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
-  <!-- Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-
-  <!-- Your app logic -->
-   <script src="game-embed.js"></script>
-
+  <script src="game-embed.js"></script>
   <script src="script.js"></script>
 
   <footer class="ts-footer">
-  <img src="favicon.png" alt="TaskSnacks Logo" class="ts-footer-logo" />
-
-  <span>© 2025 TaskSnacks — Created with ❤️</span>
-
-  <span class="footer-email">
-    Contact: <a href="mailto:tasksnacks@protonmail.com">tasksnacks@protonmail.com</a>
-  </span>
-</footer>
+    <img src="favicon.png" alt="TaskSnacks Logo" class="ts-footer-logo" />
+    <span>© 2026 TaskSnacks</span>
+    <span class="footer-email">
+      Contact: <a href="mailto:tasksnacks@protonmail.com">tasksnacks@protonmail.com</a>
+    </span>
+  </footer>
+  <div id="undoBar" class="undo-bar"></div>
 </body>
 </html>
