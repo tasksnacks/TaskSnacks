@@ -6,7 +6,7 @@
   }) {
     if (!canvas) throw new Error("createBreakRun: canvas is required");
     const ctx = canvas.getContext("2d");
-
+let DPR = 1;
     // -----------------------------
     // Config
     // -----------------------------
@@ -69,32 +69,52 @@
     };
 
     function positionPlayer() {
-      const w = canvas.width / (window.devicePixelRatio || 1);
-      const h = canvas.height / (window.devicePixelRatio || 1);
+     const w = canvas.width / DPR;
+const h = canvas.height / DPR;
       player.x = Math.round(w * 0.15);
       world.groundY = h - 20;
       player.y = world.groundY - player.h; 
     }
 
-    function fitCanvas() {
-      const cssW = canvas.parentElement ? canvas.parentElement.clientWidth : (window.innerWidth - 32);
-      const isPhone = window.matchMedia("(max-width: 600px)").matches;
-      const aspect = isPhone ? 0.6 : 0.42; 
-      const cssH = Math.min(500, Math.round(cssW * aspect));
+ function fitCanvas() {
+  const dialog = canvas.closest(".modal-dialog");
+  const topBar = dialog ? dialog.querySelector(".game-top") : null;
+  const controls = dialog ? dialog.querySelector(".game-mobile-controls") : null;
 
-      canvas.style.width = cssW + "px";
-      canvas.style.height = cssH + "px";
+  const topH = topBar ? topBar.getBoundingClientRect().height : 0;
+  const controlsH = controls ? controls.getBoundingClientRect().height : 0;
 
-      const dpr = Math.min(2, window.devicePixelRatio || 1);
-      canvas.width = Math.round(cssW * dpr);
-      canvas.height = Math.round(cssH * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      
-      const h = canvas.height / dpr;
-      world.groundY = h - 20;
-      
-      if (!state.running) positionPlayer();
-    }
+  const isPhone = window.matchMedia("(max-width: 600px)").matches;
+
+  // Width: use dialog body width (no tiny inner width surprises)
+  const parent = canvas.parentElement;
+  const cssW = parent ? parent.clientWidth : (window.innerWidth - 24);
+
+  // Height: use available viewport height so it becomes playable
+  const padding = isPhone ? 24 : 40;
+  const availableH = Math.max(
+    320,
+    window.innerHeight - topH - controlsH - padding
+  );
+
+  // Keep a reasonable aspect cap, but let it be tall
+  const aspectCap = isPhone ? 1.05 : 0.5;
+  const byAspect = Math.round(cssW * aspectCap);
+  const cssH = Math.min(availableH, byAspect);
+
+  canvas.style.width = cssW + "px";
+  canvas.style.height = cssH + "px";
+
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  canvas.width = Math.round(cssW * DPR);
+  canvas.height = Math.round(cssH * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  const h = canvas.height / DPR;
+  world.groundY = h - 20;
+
+  if (!state.running) positionPlayer();
+}
 
     // -----------------------------
     // State
@@ -222,8 +242,7 @@
       }
 
       const enemyChance = clamp(0.2 + p * 0.5, 0.2, 0.6);
-      const x = canvas.width / (window.devicePixelRatio||1) + 50;
-
+const x = canvas.width / DPR + 50;
       if (Math.random() < enemyChance) {
         const e = enemies[Math.floor(Math.random() * enemies.length)];
         obstacles.push({
@@ -389,8 +408,8 @@
     }
 
     function draw() {
-      const w = canvas.width / (window.devicePixelRatio||1);
-      const h = canvas.height / (window.devicePixelRatio||1);
+      const w = canvas.width / DPR;
+const h = canvas.height / DPR;
       ctx.clearRect(0,0,w,h);
       const dx = (Math.random() - 0.5) * state.shake;
       const dy = (Math.random() - 0.5) * state.shake;
