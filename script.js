@@ -181,6 +181,9 @@ const refreshBtn = document.getElementById("refreshBtn");
 const tryAIPreviewHint = document.getElementById("tryAIPreviewHint");
 const moveUnfinishedBtn = document.getElementById("moveUnfinishedBtn");
 const themeToggleBtn = document.getElementById("themeToggleBtn");
+const navLoggedOut = document.getElementById("navLoggedOut");
+const navLoggedIn = document.getElementById("navLoggedIn");
+const loggedOutLanding = document.getElementById("loggedOutLanding");
 
 // Settings + delete modal
 const settingsBtn = document.getElementById("settingsBtn");
@@ -208,6 +211,7 @@ const aboutBackdrop = document.getElementById("aboutBackdrop");
 // === STATE ===
 let currentUser = null;
 let currentMonthDate = new Date();
+let pickerYear = new Date().getFullYear();
 let selectedDate = new Date();
 let draggedTaskElement = null;
 let lastDeletedTask = null;
@@ -294,25 +298,37 @@ function showReward() {
 
 // === UNDO HELPERS ===
 function showUndo(task) {
-  lastDeletedTask = task;
+  lastDeletedTask = task; // Save task in memory
+  
   const undoBar = document.getElementById("undoBar");
-  if (!undoBar) return;
+  if (!undoBar) {
+    console.error("Undo bar HTML element missing!"); 
+    return;
+  }
 
+  // Render the undo button
   undoBar.innerHTML = `
     <span>Task deleted</span>
-    <button id="undoBtn">Undo</button>
+    <button id="undoBtn" type="button" style="margin-left: 10px; color: #111827; background: #fff; border:none; padding: 4px 12px; border-radius: 20px; cursor: pointer; font-weight: 600;">Undo</button>
   `;
+  
+  // Make it visible
   undoBar.classList.add("visible");
 
+  // Reset timer if you delete multiple tasks quickly
   if (undoTimeoutId) clearTimeout(undoTimeoutId);
+  
+  // Hide after 3 seconds
   undoTimeoutId = setTimeout(() => {
     hideUndoBar();
     lastDeletedTask = null;
-  }, 5000);
+  }, 3000);
 
+  // Attach click event
   const undoBtn = document.getElementById("undoBtn");
   if (undoBtn) {
     undoBtn.onclick = async () => {
+      // Restore task
       if (!lastDeletedTask || !currentUser) return;
 
       const { data, error } = await supabase
@@ -381,9 +397,13 @@ function updateAuthUI() {
     logoutBtn.style.display = "inline-block";
     loginBtn.style.display = "none";
     signupBtn.style.display = "none";
+    // Show app and hide landing when logged in
+if (appContent) appContent.style.display = "block";
+if (loggedOutLanding) loggedOutLanding.style.display = "none";
 
     emailInput.style.display = "none";
     passwordInput.style.display = "none";
+    if (settingsBtn) settingsBtn.style.display = "inline-flex";
 
     if (loggedOutInfo) loggedOutInfo.style.display = "none";
     if (hasCalendar) calendarSection.style.display = "block";
@@ -399,24 +419,32 @@ function updateAuthUI() {
     logoutBtn.style.display = "none";
     loginBtn.style.display = "inline-block";
     signupBtn.style.display = "inline-block";
+    // Hide app and show landing when logged out
+if (appContent) appContent.style.display = "none";
+if (loggedOutLanding) loggedOutLanding.style.display = "flex";
 
     emailInput.style.display = "inline-block";
     passwordInput.style.display = "inline-block";
+    if (settingsBtn) settingsBtn.style.display = "none";
 
     if (loggedOutInfo) loggedOutInfo.style.display = "block";
     if (hasCalendar) calendarSection.style.display = "none";
     if (hasSort) sortSection.style.display = "none";
     if (hasManual) manualAddSection.style.display = "none";
 
-    if (appContent) appContent.style.display = "block";
-    organizeBtn.disabled = false;
+    if (appContent) appContent.style.display = "none";
+    organizeBtn.disabled = true;
 
     if (tryAIPreviewHint) tryAIPreviewHint.style.display = "block";
 
     tasksContainer.innerHTML = "";
     funFactContainer.textContent = "";
   }
-
+// --- Header actions (new wrappers) ---
+// Keep theme + about visible in both states.
+if (navLoggedOut) navLoggedOut.style.display = "flex";
+// Only show refresh/game/settings when logged in.
+if (navLoggedIn) navLoggedIn.style.display = currentUser ? "flex" : "none";
   if (passwordResetSection) {
     passwordResetSection.style.display = isRecoveryMode ? "block" : "none";
   }
@@ -663,8 +691,23 @@ async function renderCalendar() {
   const year = currentMonthDate.getFullYear();
   const month = currentMonthDate.getMonth();
 
-  updateCalendarHeaderLabel(year, month);
+  // --- 1. SETUP HEADER & DROPDOWN TRIGGER ---
+  const monthName = new Date(year, month, 1).toLocaleString(undefined, { month: "long" });
+  
+  if (calendarMonthLabel) {
+    calendarMonthLabel.textContent = `${monthName} ${year}`;
+    
+    // Style it to look clickable
+    calendarMonthLabel.style.cursor = "pointer";
+    
+    // Add Click Event to open the picker
+    calendarMonthLabel.onclick = (e) => {
+      e.stopPropagation(); // Stop click from bubbling
+      toggleDatePicker(year, month);
+    };
+  }
 
+  // --- 2. CALCULATE DATES ---
   const first = new Date(year, month, 1);
   const firstDay = (first.getDay() + 6) % 7; // Monday = 0
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -672,7 +715,11 @@ async function renderCalendar() {
   const monthStart = formatDateLocal(first);
   const last = new Date(year, month + 1, 0);
   const monthEnd = formatDateLocal(last);
+  
+  // Identify "Today" for the red color
+  const todayStr = formatDateLocal(new Date());
 
+  // --- 3. FETCH TASKS ---
   const { data, error } = await supabase
     .from("tasks")
     .select("task_date")
@@ -684,8 +731,10 @@ async function renderCalendar() {
 
   const datesWithTasks = new Set((data || []).map((row) => row.task_date));
 
+  // --- 4. RENDER GRID ---
   calendarGrid.innerHTML = "";
 
+  // Day Headers (Mon, Tue...)
   const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   dayNames.forEach((name) => {
     const el = document.createElement("div");
@@ -694,6 +743,7 @@ async function renderCalendar() {
     calendarGrid.appendChild(el);
   });
 
+  // Empty slots before 1st of month
   for (let i = 0; i < firstDay; i++) {
     const empty = document.createElement("div");
     calendarGrid.appendChild(empty);
@@ -701,6 +751,7 @@ async function renderCalendar() {
 
   const selectedIso = taskDateInput?.value || formatDateLocal(selectedDate);
 
+  // Render Days
   for (let day = 1; day <= daysInMonth; day++) {
     const dateObj = new Date(year, month, day);
     const dateStr = formatDateLocal(dateObj);
@@ -710,43 +761,62 @@ async function renderCalendar() {
     cell.textContent = day;
     cell.dataset.date = dateStr;
 
+    // Add classes
     if (datesWithTasks.has(dateStr)) cell.classList.add("has-tasks");
     if (selectedIso === dateStr) cell.classList.add("selected");
+    if (dateStr === todayStr) cell.classList.add("is-today"); // <--- The Red Color Logic
 
+    // Click to select date
     cell.addEventListener("click", async () => {
       setSelectedDate(new Date(dateStr + "T00:00:00"));
       updateTodayLabel();
       await loadTasksForSelectedDate();
 
-      document
-        .querySelectorAll(".cal-day.selected")
-        .forEach((el) => el.classList.remove("selected"));
+      document.querySelectorAll(".cal-day.selected").forEach((el) => el.classList.remove("selected"));
       cell.classList.add("selected");
-
-      // keep header correct while open
-      updateCalendarHeaderLabel(currentMonthDate.getFullYear(), currentMonthDate.getMonth());
+      
+      // Ensure header stays correct (and clickable)
+      renderCalendar(); 
     });
 
     calendarGrid.appendChild(cell);
   }
+
+  // --- 5. CREATE PICKER HTML (If missing) ---
+  let picker = document.getElementById("calendarPicker");
+  if (!picker && calendarSection) {
+    picker = document.createElement("div");
+    picker.id = "calendarPicker";
+    picker.className = "calendar-picker-overlay hidden";
+    calendarSection.appendChild(picker); // Append to the card so it floats correctly
+  }
 }
 
-// === LOAD TASKS FOR A DATE ===
+// === LOAD TASKS & SORTING ===
 async function loadTasksForSelectedDate() {
   tasksContainer.innerHTML = "";
   funFactContainer.textContent = "";
-  hideUndoBar();
+  hideUndoBar(); // Hide undo if we switch dates
 
   const date = taskDateInput.value;
   if (!date || !currentUser) return;
 
-  const { data, error } = await supabase
+  // 1. Default fetch: Order by custom sort_index first, then creation time
+  let query = supabase
     .from("tasks")
     .select("*")
     .eq("user_id", currentUser.id)
-    .eq("task_date", date)
-    .order("sort_index", { ascending: true })
-    .order("created_at", { ascending: true });
+    .eq("task_date", date);
+
+  // Apply default database sorting based on selection to minimize client-side shuffle
+  if (sortMode.value === "created") {
+     query = query.order("created_at", { ascending: true });
+  } else {
+     // Default for 'custom' and 'priority' initial fetch
+     query = query.order("sort_index", { ascending: true });
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error(error);
@@ -755,12 +825,27 @@ async function loadTasksForSelectedDate() {
 
   let tasks = data || [];
 
+  // 2. Client-side Sorting Logic
   if (sortMode && sortMode.value === "priority") {
+    // High -> Medium -> Low
     const order = { high: 0, medium: 1, low: 2 };
     tasks.sort((a, b) => (order[a.priority] ?? 3) - (order[b.priority] ?? 3));
+  } else if (sortMode && sortMode.value === "created") {
+    // Oldest first
+    tasks.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  } else {
+    // Custom order (sort_index)
+    tasks.sort((a, b) => (a.sort_index || 0) - (b.sort_index || 0));
   }
 
   tasks.forEach((task) => renderTaskItem(task));
+}
+
+// Ensure the dropdown listener triggers this
+if (sortMode) {
+  sortMode.addEventListener("change", () => {
+    loadTasksForSelectedDate();
+  });
 }
 // === DRAG & DROP CONTAINER HANDLING ===
 tasksContainer.addEventListener("dragover", (e) => {
@@ -813,16 +898,25 @@ async function saveTaskOrderToDatabase() {
 
 // === DELETE WITH ANIMATION & UNDO ===
 async function handleDelete(task, div) {
+  // 1. Animate out
   div.style.opacity = "0";
   div.style.transform = "translateX(20px)";
 
+  // 2. Wait for animation, then remove and trigger Undo
   setTimeout(async () => {
+    // Only delete from DB if logged in and not a preview task
     if (currentUser && !String(task.id).startsWith("preview-")) {
       await supabase.from("tasks").delete().eq("id", task.id);
+      
+      // Update the UI order
       await saveTaskOrderToDatabase();
       await renderCalendar();
-      showUndo(task);
+      
+      // *** THIS IS THE KEY PART ***
+      showUndo(task); 
     }
+    
+    // Remove the HTML element
     div.remove();
   }, 150);
 }
@@ -948,12 +1042,22 @@ function renderTaskItem(task) {
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
   checkbox.checked = !!task.completed;
+  if (task.completed) {
+    div.classList.add("completed");
+  }
+
   checkbox.addEventListener("change", async () => {
     if (currentUser && !String(task.id).startsWith("preview-")) {
       await supabase.from("tasks").update({ completed: checkbox.checked }).eq("id", task.id);
     }
-
-    if (checkbox.checked) showReward();
+    
+    // Toggle class immediately
+    if (checkbox.checked) {
+      div.classList.add("completed");
+      showReward();
+    } else {
+      div.classList.remove("completed");
+    }
 
     track("ts_task_completed_toggle", {
       completed: checkbox.checked,
@@ -1517,6 +1621,85 @@ mobileThemeBtn?.addEventListener("click", () => document.getElementById("themeTo
 
 window.addEventListener("resize", () => gameInstance?.resize?.());
 window.addEventListener("orientationchange", () => setTimeout(() => gameInstance?.resize?.(), 80));
+
+// === CALENDAR PICKER HELPERS ===
+
+function toggleDatePicker(currentYear, currentMonth) {
+  const picker = document.getElementById("calendarPicker");
+  if (!picker) return;
+
+  // If open, close it
+  if (!picker.classList.contains("hidden")) {
+    picker.classList.add("hidden");
+    return;
+  }
+  
+  // If closed, open it and render contents
+  pickerYear = currentYear; // Sync picker with current view
+  renderPickerContent(currentMonth);
+  picker.classList.remove("hidden");
+}
+
+function renderPickerContent(activeMonthIndex) {
+  const picker = document.getElementById("calendarPicker");
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  picker.innerHTML = `
+    <div class="picker-header">
+      <button id="pickerPrevYear" class="picker-btn">«</button>
+      <span class="picker-year">${pickerYear}</span>
+      <button id="pickerNextYear" class="picker-btn">»</button>
+    </div>
+    <div class="picker-months">
+      ${monthNames.map((m, i) => `
+        <div class="month-btn ${i === activeMonthIndex ? 'active' : ''}" data-month="${i}">${m}</div>
+      `).join('')}
+    </div>
+  `;
+
+  // Year Navigation Events
+  document.getElementById("pickerPrevYear").onclick = (e) => { 
+    e.stopPropagation();
+    pickerYear--; 
+    renderPickerContent(activeMonthIndex); 
+  };
+  document.getElementById("pickerNextYear").onclick = (e) => { 
+    e.stopPropagation();
+    pickerYear++; 
+    renderPickerContent(activeMonthIndex); 
+  };
+
+  // Month Selection Events
+  picker.querySelectorAll(".month-btn").forEach(btn => {
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      const m = parseInt(btn.dataset.month);
+      
+      // Update global calendar view
+      currentMonthDate = new Date(pickerYear, m, 1);
+      
+      // Also jump selection to the 1st of that month
+      const newDate = new Date(pickerYear, m, 1);
+      setSelectedDate(newDate);
+      
+      picker.classList.add("hidden");
+      await loadTasksForSelectedDate();
+      await renderCalendar();
+    };
+  });
+}
+
+// Close picker if clicking outside
+document.addEventListener("click", (e) => {
+  const picker = document.getElementById("calendarPicker");
+  const label = document.getElementById("calendarMonthLabel");
+  
+  // If picker exists, is open, and click was NOT inside picker AND NOT on the label
+  if (picker && !picker.classList.contains("hidden") && !picker.contains(e.target) && e.target !== label) {
+    picker.classList.add("hidden");
+  }
+});
+
 // === INIT ===
 handleRecoveryFromURL();
 checkSession();
