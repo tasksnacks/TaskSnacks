@@ -102,7 +102,9 @@ const supabaseUrl = "https://fxexewdnbmiybbutcnyv.supabase.co";
 const supabaseKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4ZXhld2RuYm1peWJidXRjbnl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1NTA2MjQsImV4cCI6MjA3OTEyNjYyNH0.E_UQHGX4zeLUajwMIlTRchsCMnr99__cDESOHflp8cc";
 
-// Supabase client (safe init)
+  const SORT_MODE_KEY = "ts_sort_mode";
+
+  // Supabase client (safe init)
 if (!window.supabase || typeof window.supabase.createClient !== "function") {
   console.error("Supabase failed to load. window.supabase=", window.supabase);
   alert("Supabase failed to load. Please refresh the page.");
@@ -170,6 +172,10 @@ const calendarTodayLabel = document.getElementById("calendarTodayLabel");
 
 const sortSection = document.getElementById("sortSection");
 const sortMode = document.getElementById("sortMode");
+if (sortMode) {
+  const saved = localStorage.getItem(SORT_MODE_KEY);
+  if (saved) sortMode.value = saved;
+}
 
 const manualAddSection = document.getElementById("manualAddSection");
 const manualTaskInput = document.getElementById("manualTaskInput");
@@ -933,6 +939,7 @@ async function loadTasksForSelectedDate() {
 // Ensure the dropdown listener triggers this
 if (sortMode) {
   sortMode.addEventListener("change", () => {
+    localStorage.setItem(SORT_MODE_KEY, sortMode.value);
     loadTasksForSelectedDate();
   });
 }
@@ -943,6 +950,10 @@ tasksContainer.addEventListener("dragover", (e) => {
 });
 
 function getDragAfterElement(container, y) {
+  if (sortMode) {
+  sortMode.value = "custom";
+  localStorage.setItem(SORT_MODE_KEY, "custom");
+}
   const draggableElements = [
     ...container.querySelectorAll(".task-item:not(.dragging)")
   ];
@@ -979,7 +990,10 @@ async function saveTaskOrderToDatabase() {
   });
   try {
     await Promise.all(updates);
-    if (sortMode) sortMode.value = "created";
+    if (sortMode) {
+  sortMode.value = "custom";
+  localStorage.setItem(SORT_MODE_KEY, "custom");
+}
   } catch (e) {
     console.error("Error saving order:", e);
   }
